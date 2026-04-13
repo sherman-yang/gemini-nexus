@@ -6,7 +6,7 @@ export function loadScript(src) {
         const script = document.createElement('script');
         script.src = src;
         script.onload = resolve;
-        script.onerror = reject;
+        script.onerror = (event) => reject(new Error(`Failed to load script: ${src}`));
         document.head.appendChild(script);
     });
 }
@@ -25,7 +25,10 @@ export async function loadLibs() {
         const loadMarked = loadScript('https://cdn.jsdelivr.net/npm/marked/marked.min.js');
         const timeout = new Promise((_, reject) => setTimeout(() => reject('CDN Timeout'), 5000));
         
-        await Promise.race([loadMarked, timeout]).catch(e => console.warn("Marked load issue:", e));
+        await Promise.race([loadMarked, timeout]).catch((error) => {
+            const message = error instanceof Error ? error.message : String(error);
+            console.warn("Marked load issue:", message);
+        });
         
         // Re-run config now that marked is loaded
         configureMarkdown();
@@ -41,10 +44,14 @@ export async function loadLibs() {
         ]).then(() => {
              // Auto-render ext for Katex
              return loadScript('https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js');
-        }).catch(e => console.warn("Optional libs load failed", e));
+        }).catch((error) => {
+            const message = error instanceof Error ? error.message : String(error);
+            console.warn("Optional libs load failed", message);
+        });
 
         console.log("Lazy dependencies loading...");
-    } catch (e) {
-        console.warn("Deferred loading failed", e);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn("Deferred loading failed", message);
     }
 }

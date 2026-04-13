@@ -13,6 +13,7 @@ export class AboutSection {
         const get = (id) => document.getElementById(id);
         this.elements = {
             btnDownloadLogs: get('download-logs'),
+            aboutGroup: get('about-settings-group'),
             starEl: get('star-count'),
             currentVersionEl: get('app-current-version'),
             updateStatusEl: get('app-update-status')
@@ -26,8 +27,10 @@ export class AboutSection {
             });
         }
         document.addEventListener('click', (event) => {
-            const link = event.target.closest('.settings-modal a[href]');
+            const link = event.target.closest('#about-settings-group a[href]');
             if (!link) return;
+
+            if (this.elements.aboutGroup && !this.elements.aboutGroup.contains(link)) return;
 
             const href = link.getAttribute('href');
             if (!href || !/^https?:\/\//i.test(href)) return;

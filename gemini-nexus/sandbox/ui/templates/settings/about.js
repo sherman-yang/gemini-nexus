@@ -8,7 +8,7 @@ export const AboutSettingsTemplate = `
     </div>
 </div>
 
-<div class="setting-group">
+<div class="setting-group" id="about-settings-group">
     <h4 data-i18n="about">About</h4>
     <p class="setting-info">
         <strong>Gemini Nexus</strong> 
