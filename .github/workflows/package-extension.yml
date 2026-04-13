@@ -86,6 +86,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ steps.release.outputs.tag }}
           ZIP_PATH: artifacts/gemini-nexus-v${{ steps.version.outputs.value }}.zip
+          ZIP_NAME: gemini-nexus-v${{ steps.version.outputs.value }}.zip
         run: |
           if [[ -z "$RELEASE_TAG" ]]; then
             echo "release_tag is required when publish_release is true" >&2
@@ -98,6 +99,18 @@ jobs:
               --title "$RELEASE_TAG" \
               --generate-notes
           fi
+
+          gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '
+            .assets[]
+            | select(.name | startswith("gemini-nexus-v"))
+            | .name
+          ' | while IFS= read -r asset_name; do
+            if [[ -n "$asset_name" && "$asset_name" != "$ZIP_NAME" ]]; then
+              gh release delete-asset "$RELEASE_TAG" "$asset_name" \
+                --repo "$GITHUB_REPOSITORY" \
+                --yes
+            fi
+          done
 
           gh release upload "$RELEASE_TAG" "$ZIP_PATH" \
             --repo "$GITHUB_REPOSITORY" \
