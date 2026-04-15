@@ -1,6 +1,9 @@
 # Extension Hardening Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
+>
+> **Status:** Completed and backfilled on 2026-04-15 from the landed branch history plus fresh verification.
+> Some planned file paths were later superseded by follow-up cleanup, so the checklist reflects completed outcomes rather than every intermediate patch shape.
 
 **Goal:** Fix the current security, build, and type-checking defects so the repository produces a loadable Chrome extension and closes the reported XSS and message-validation gaps.
 
@@ -17,8 +20,8 @@
 - Create: `gemini-nexus/vitest.config.ts`
 - Create: `gemini-nexus/tests/setup/test-dom.js`
 
-- [ ] Add Vitest-based unit test support for browser-like modules.
-- [ ] Verify the new test command runs.
+- [x] Add Vitest-based unit test support for browser-like modules.
+- [x] Verify the new test command runs.
 
 ### Task 2: Secure Sandbox Rendering
 
@@ -29,9 +32,9 @@
 - Modify: `gemini-nexus/sandbox/boot/renderer.js`
 - Test: `gemini-nexus/tests/sandbox/sanitize.test.js`
 
-- [ ] Write failing tests for dangerous HTML stripping while preserving expected markdown output structure.
-- [ ] Implement sanitization and raw-text escaping fallback.
-- [ ] Re-run targeted tests.
+- [x] Write failing tests for dangerous HTML stripping while preserving expected markdown output structure.
+- [x] Implement sanitization and raw-text escaping fallback.
+- [x] Re-run targeted tests.
 
 ### Task 3: Tighten postMessage Bridges
 
@@ -43,9 +46,9 @@
 - Modify: `gemini-nexus/sandbox/ui/settings.js`
 - Test: `gemini-nexus/tests/messaging/bridge-security.test.js`
 
-- [ ] Write failing tests for trusted message checks.
-- [ ] Implement source/origin validation and keep existing functionality working.
-- [ ] Re-run targeted tests.
+- [x] Write failing tests for trusted message checks.
+- [x] Implement source/origin validation and keep existing functionality working.
+- [x] Re-run targeted tests.
 
 ### Task 4: Repair Build Packaging
 
@@ -57,9 +60,9 @@
 - Modify: `gemini-nexus/README.md`
 - Modify: `gemini-nexus/manifest.json`
 
-- [ ] Add a packaging step that copies manifest, background, content, services, static assets, and sandbox helper files into dist after Vite finishes.
-- [ ] Ensure the packaged dist directory is directly loadable by Chrome.
-- [ ] Update docs to match the real workflow.
+- [x] Add a packaging step that copies manifest, background, content, services, static assets, and sandbox helper files into dist after Vite finishes.
+- [x] Ensure the packaged dist directory is directly loadable by Chrome.
+- [x] Update docs to match the real workflow.
 
 ### Task 5: Restore Type Safety and Reduce Permission Surface
 
@@ -68,17 +71,17 @@
 - Modify: `gemini-nexus/manifest.json`
 - Test/Verify: `npx tsc --noEmit`
 
-- [ ] Add the missing type declaration so typecheck succeeds.
-- [ ] Remove only the manifest scope that is demonstrably unnecessary while preserving extension features.
-- [ ] Re-run typecheck.
+- [x] Add the missing type declaration so typecheck succeeds.
+- [x] Remove only the manifest scope that is demonstrably unnecessary while preserving extension features.
+- [x] Re-run typecheck.
 
 ### Task 6: Final Verification
 
 **Files:**
 - Verify only
 
-- [ ] Run targeted unit tests.
-- [ ] Run full `npm test`.
-- [ ] Run `npx tsc --noEmit`.
-- [ ] Run `npm run build` and inspect `dist` for a loadable extension layout.
-- [ ] Run `npm audit` and confirm whether the build dependency advisories are reduced.
+- [x] Run targeted unit tests.
+- [x] Run full `npm test`.
+- [x] Run `npx tsc --noEmit`.
+- [x] Run `npm run build` and inspect `dist` for a loadable extension layout.
+- [x] Run `npm audit` and confirm whether the build dependency advisories are reduced.

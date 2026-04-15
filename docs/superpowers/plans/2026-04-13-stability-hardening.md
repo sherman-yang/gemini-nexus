@@ -1,6 +1,9 @@
 # Stability Hardening Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
+>
+> **Status:** Completed and backfilled on 2026-04-15 from the landed branch history plus fresh verification.
+> The checklist below reflects the shipped outcomes; a few implementation details were later refined by follow-up cleanup commits.
 
 **Goal:** Restore the four confirmed regressions in quick-ask page context, renderer bridge validation, SVG sanitization, and login recovery UX without broadening scope.
 
@@ -16,7 +19,7 @@
 - Modify: `gemini-nexus/background/handlers/session/quick_ask_handler.js`
 - Test: `gemini-nexus/tests/background/quick_ask_handler.test.js`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 test('builds page-context system instructions for quick ask requests', async () => {
@@ -52,12 +55,12 @@ test('builds page-context system instructions for quick ask requests', async () 
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/background/quick_ask_handler.test.js`
 Expected: FAIL because `QuickAskHandler` does not yet build or forward `systemInstruction`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```js
 export class QuickAskHandler {
@@ -84,12 +87,12 @@ export class QuickAskHandler {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run tests/background/quick_ask_handler.test.js`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add gemini-nexus/background/handlers/session/quick_ask_handler.js gemini-nexus/tests/background/quick_ask_handler.test.js
@@ -103,7 +106,7 @@ git commit -m "fix: restore quick ask page context"
 - Modify: `gemini-nexus/sandbox/boot/renderer.js`
 - Test: `gemini-nexus/tests/messaging/bridge-security.test.js`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 test('validates renderer requests against parent window origin and token', () => {
@@ -120,12 +123,12 @@ test('validates renderer requests against parent window origin and token', () =>
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/messaging/bridge-security.test.js`
 Expected: FAIL because `isTrustedRendererRequest` does not exist.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```js
 export function isTrustedRendererRequest(event, expectedWindow, expectedOrigin, expectedToken) {
@@ -163,12 +166,12 @@ export function initRendererMode() {
 }
 ```
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run tests/messaging/bridge-security.test.js`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add gemini-nexus/lib/message_security.js gemini-nexus/sandbox/boot/renderer.js gemini-nexus/tests/messaging/bridge-security.test.js
@@ -181,7 +184,7 @@ git commit -m "fix: validate renderer bridge messages"
 - Modify: `gemini-nexus/sandbox/render/sanitize.js`
 - Test: `gemini-nexus/tests/sandbox/sanitize.test.js`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 test('preserves svg viewbox attributes during sanitization', () => {
@@ -190,12 +193,12 @@ test('preserves svg viewbox attributes during sanitization', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/sandbox/sanitize.test.js`
 Expected: FAIL because the current sanitizer strips `viewBox`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```js
 const TAG_ATTRS = {
@@ -206,12 +209,12 @@ const TAG_ATTRS = {
 
 If needed, preserve original attribute casing by comparing on a normalized lowercase key while leaving the DOM attribute untouched.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run tests/sandbox/sanitize.test.js`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add gemini-nexus/sandbox/render/sanitize.js gemini-nexus/tests/sandbox/sanitize.test.js
@@ -225,7 +228,7 @@ git commit -m "fix: preserve svg viewport attributes"
 - Modify: `gemini-nexus/content/toolbar/view/window.js`
 - Test: `gemini-nexus/tests/content/window_view.test.js`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 test('renders trusted login recovery links without interpreting arbitrary html', () => {
@@ -250,12 +253,12 @@ test('renders trusted login recovery links without interpreting arbitrary html',
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/content/window_view.test.js`
 Expected: FAIL because `showError` does not yet accept or render link metadata.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 ```js
 return {
@@ -285,12 +288,12 @@ showError(text, meta = null) {
 
 Update the toolbar streaming/done path to pass `result.errorMeta` into `showError`.
 
-- [ ] **Step 4: Run test to verify it passes**
+- [x] **Step 4: Run test to verify it passes**
 
 Run: `npx vitest run tests/content/window_view.test.js`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add gemini-nexus/background/managers/session_manager.js gemini-nexus/content/toolbar/view/window.js gemini-nexus/tests/content/window_view.test.js
@@ -302,12 +305,12 @@ git commit -m "fix: restore safe login recovery links"
 **Files:**
 - Verify only
 
-- [ ] Run targeted tests:
+- [x] Run targeted tests:
   `npx vitest run tests/background/quick_ask_handler.test.js tests/messaging/bridge-security.test.js tests/sandbox/sanitize.test.js tests/content/window_view.test.js`
-- [ ] Run full suite:
+- [x] Run full suite:
   `npm test`
-- [ ] Run typecheck:
+- [x] Run typecheck:
   `npm run typecheck`
-- [ ] Run production build:
+- [x] Run production build:
   `npm run build`
-- [ ] Inspect `dist/` only if build output changes unexpectedly.
+- [x] Inspect `dist/` only if build output changes unexpectedly.

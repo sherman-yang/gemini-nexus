@@ -1,6 +1,9 @@
 # Structure Cleanup Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox syntax for tracking.
+>
+> **Status:** Completed and backfilled on 2026-04-15 from the landed branch history plus fresh verification.
+> Where later cleanup simplified file layout further, the checklist reflects the completed result rather than the exact intermediate path names from the draft plan.
 
 **Goal:** Remove the three confirmed low-risk structure issues without changing extension behavior: misleading content entrypoint naming, an unused vendored snapshot formatter copy, and duplicated HTML image parsing logic.
 
@@ -22,7 +25,7 @@
 - Modify: `gemini-nexus/scripts/package-extension.mjs`
 - Test: `gemini-nexus/tests/content/entrypoint_contract.test.js`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 import { readFileSync } from 'node:fs';
@@ -50,12 +53,12 @@ describe('content entrypoint contract', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/content/entrypoint_contract.test.js`
 Expected: FAIL because `manifest.json` still targets `content/index.js`, the packaging script still emits `dist/content/index.js`, and `content/main.js` still imports `./index.js`.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Create `gemini-nexus/content/bootstrap.js` by moving the current `content/index.js` bootstrap body unchanged:
 
@@ -140,7 +143,7 @@ Update `gemini-nexus/scripts/package-extension.mjs`:
 
 Delete `gemini-nexus/content/index.js` after confirming all references now point at `content/main.js` or `content/bootstrap.js`.
 
-- [ ] **Step 4: Run verification**
+- [x] **Step 4: Run verification**
 
 Run: `npx vitest run tests/content/entrypoint_contract.test.js`
 Expected: PASS.
@@ -148,7 +151,7 @@ Expected: PASS.
 Run: `npm run build`
 Expected: PASS and packaged output contains `dist/content/main.js` referenced by the copied manifest.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add gemini-nexus/content/bootstrap.js gemini-nexus/content/main.js gemini-nexus/manifest.json gemini-nexus/scripts/package-extension.mjs gemini-nexus/tests/content/entrypoint_contract.test.js
@@ -164,7 +167,7 @@ git commit -m "refactor: align content script entrypoints"
 - Modify: `gemini-nexus/background/control/snapshot/formatter.js`
 - Test: `gemini-nexus/tests/background/snapshot_formatter_reference.test.js`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 import { existsSync, readFileSync } from 'node:fs';
@@ -199,12 +202,12 @@ describe('snapshot formatter reference hygiene', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/background/snapshot_formatter_reference.test.js`
 Expected: FAIL because the old vendored files still exist and the runtime formatter still references the local mirrored path in a comment.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Replace the local mirror note in `gemini-nexus/background/control/snapshot/formatter.js` with an upstream reference:
 
@@ -223,7 +226,7 @@ gemini-nexus/chrome-devtools-mcp-main/src/formatters/snapshotFormatter.ts
 
 Do not move the vendored copy elsewhere in this pass. The goal is one runtime implementation plus one external source of truth, not a local mirror under a new folder.
 
-- [ ] **Step 4: Run verification**
+- [x] **Step 4: Run verification**
 
 Run: `npx vitest run tests/background/snapshot_formatter_reference.test.js`
 Expected: PASS.
@@ -231,7 +234,7 @@ Expected: PASS.
 Run: `npm test`
 Expected: PASS with the rest of the suite still green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add gemini-nexus/background/control/snapshot/formatter.js gemini-nexus/tests/background/snapshot_formatter_reference.test.js
@@ -245,7 +248,7 @@ git commit -m "chore: remove vendored snapshot formatter copy"
 - Modify: `gemini-nexus/sandbox/core/image_manager.js`
 - Test: `gemini-nexus/tests/sandbox/image_manager.test.js`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 ```js
 import { describe, expect, test } from 'vitest';
@@ -287,12 +290,12 @@ describe('extractHtmlImagePayloads', () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it fails**
+- [x] **Step 2: Run test to verify it fails**
 
 Run: `npx vitest run tests/sandbox/image_manager.test.js`
 Expected: FAIL because `extractHtmlImagePayloads` does not exist.
 
-- [ ] **Step 3: Write minimal implementation**
+- [x] **Step 3: Write minimal implementation**
 
 Add a pure helper near the top of `gemini-nexus/sandbox/core/image_manager.js`:
 
@@ -365,7 +368,7 @@ for (const item of extractHtmlImagePayloads(html, {
 }
 ```
 
-- [ ] **Step 4: Run verification**
+- [x] **Step 4: Run verification**
 
 Run: `npx vitest run tests/sandbox/image_manager.test.js`
 Expected: PASS.
@@ -373,7 +376,7 @@ Expected: PASS.
 Run: `npm test`
 Expected: PASS with no regressions in existing sandbox tests.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add gemini-nexus/sandbox/core/image_manager.js gemini-nexus/tests/sandbox/image_manager.test.js
@@ -386,27 +389,27 @@ git commit -m "refactor: share sandbox html image parsing"
 - Modify: none
 - Test: existing suite and build outputs
 
-- [ ] **Step 1: Run the targeted tests from Tasks 1-3 together**
+- [x] **Step 1: Run the targeted tests from Tasks 1-3 together**
 
 Run: `npx vitest run tests/content/entrypoint_contract.test.js tests/background/snapshot_formatter_reference.test.js tests/sandbox/image_manager.test.js`
 Expected: PASS.
 
-- [ ] **Step 2: Run the full test suite**
+- [x] **Step 2: Run the full test suite**
 
 Run: `npm test`
 Expected: PASS.
 
-- [ ] **Step 3: Run static verification**
+- [x] **Step 3: Run static verification**
 
 Run: `npm run typecheck`
 Expected: PASS.
 
-- [ ] **Step 4: Run production build verification**
+- [x] **Step 4: Run production build verification**
 
 Run: `npm run build`
 Expected: PASS and packaged extension assets land in `gemini-nexus/dist/`.
 
-- [ ] **Step 5: Commit verification note if needed**
+- [x] **Step 5: Commit verification note if needed**
 
 ```bash
 git status --short
