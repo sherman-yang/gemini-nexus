@@ -104,11 +104,13 @@ export class MessageHandler {
 
         // If we don't have a bubble yet, create one
         if (!this.streamingBubble) {
-            this.streamingBubble = appendMessage(this.ui.historyDiv, "", 'ai', null, "");
+            this.streamingBubble = appendMessage(this.ui.historyDiv, "", 'ai', null, "", null, {
+                isStreaming: true
+            });
         }
         
         // Update content if text or thoughts exist
-        this.streamingBubble.update(request.text, request.thoughts);
+        this.streamingBubble.update(request.text, request.thoughts, { isStreaming: true });
         
         // Ensure UI state reflects generation
         if (!this.app.isGenerating) {
@@ -166,7 +168,7 @@ export class MessageHandler {
             // Update UI
             if (this.streamingBubble) {
                 // Finalize the streaming bubble with complete text and thoughts
-                this.streamingBubble.update(request.text, request.thoughts);
+                this.streamingBubble.finalize(request.text, request.thoughts);
                 
                 // Inject images if any
                 if (request.images && request.images.length > 0) {
@@ -185,7 +187,10 @@ export class MessageHandler {
                 this.streamingBubble = null;
             } else {
                 // Fallback if no stream occurred (or single short response)
-                appendMessage(this.ui.historyDiv, request.text, 'ai', request.images, request.thoughts, request.sources);
+                appendMessage(this.ui.historyDiv, request.text, 'ai', request.images, request.thoughts, request.sources, {
+                    isFinal: true,
+                    thoughtsDurationSeconds: request.thoughts ? 0 : null
+                });
             }
         }
     }

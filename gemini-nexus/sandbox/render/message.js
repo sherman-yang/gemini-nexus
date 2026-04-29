@@ -6,6 +6,17 @@ import { createGeneratedImage } from './generated_image.js';
 import { t } from '../core/i18n.js';
 
 const MAX_VISIBLE_SOURCES = 2;
+const THOUGHTS_REGION_PREFIX = 'thoughts-content';
+
+function formatThoughtDuration(seconds) {
+    if (!Number.isFinite(seconds)) return null;
+    if (seconds > 0 && seconds < 1) return '1';
+    return String(Math.max(0, Math.round(seconds)));
+}
+
+function hasDisplayableThoughts(thoughts) {
+    return typeof thoughts === 'string' ? thoughts.trim().length > 0 : Boolean(thoughts);
+}
 
 export function appendContextCompressionNotice(container, text, options = {}) {
     const div = document.createElement('div');
@@ -114,7 +125,14 @@ export function appendMessage(container, text, role, attachment = null, thoughts
 
     let contentDiv = null;
     let thoughtsDiv = null;
+    let thoughtsToggle = null;
+    let thoughtsStatus = null;
     let thoughtsContent = null;
+    let thoughtsStartedAt = null;
+    let thoughtsDurationSeconds = Number.isFinite(options.thoughtsDurationSeconds)
+        ? options.thoughtsDurationSeconds
+        : null;
+    let thoughtsExpanded = false;
     let sourcesDiv = null;
     let editCancel = null;
 
@@ -187,30 +205,105 @@ export function appendMessage(container, text, role, attachment = null, thoughts
         return wrapper;
     };
 
+    const getThoughtsCompleteLabel = () => {
+        if (thoughtsDurationSeconds !== null) {
+            return t('thoughtsCompleteWithDuration').replace('{seconds}', formatThoughtDuration(thoughtsDurationSeconds));
+        }
+        return t('thoughtsComplete');
+    };
+
+    const updateThoughtsStatus = (isStreaming) => {
+        if (!thoughtsStatus) return;
+        thoughtsStatus.textContent = isStreaming ? t('thoughtsStreaming') : getThoughtsCompleteLabel();
+    };
+
+    const setThoughtsExpanded = (expanded) => {
+        if (!thoughtsToggle || !thoughtsContent || !thoughtsDiv) return;
+        thoughtsExpanded = expanded;
+        thoughtsDiv.classList.toggle('thoughts-expanded', expanded);
+        thoughtsToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        thoughtsToggle.setAttribute('aria-label', expanded ? t('thoughtsCollapse') : t('thoughtsExpand'));
+        thoughtsContent.hidden = !expanded;
+    };
+
+    const setThoughtsVisible = (visible) => {
+        if (!thoughtsDiv) return;
+        thoughtsDiv.hidden = !visible;
+    };
+
+    const updateThoughts = (nextThoughts, state = {}) => {
+        if (!thoughtsContent) return;
+
+        if (nextThoughts !== undefined) {
+            currentThoughts = nextThoughts || "";
+            renderContent(thoughtsContent, currentThoughts, 'ai');
+        }
+
+        const hasThoughts = hasDisplayableThoughts(currentThoughts);
+        setThoughtsVisible(hasThoughts);
+        if (!hasThoughts) return;
+
+        if (state.isStreaming) {
+            if (!thoughtsStartedAt) {
+                thoughtsStartedAt = Date.now();
+            }
+            updateThoughtsStatus(true);
+            setThoughtsExpanded(true);
+            return;
+        }
+
+        if (state.isFinal) {
+            thoughtsDurationSeconds = thoughtsStartedAt
+                ? (Date.now() - thoughtsStartedAt) / 1000
+                : (thoughtsDurationSeconds ?? 0);
+            setThoughtsExpanded(false);
+        }
+
+        updateThoughtsStatus(false);
+    };
+
     // Allow creating empty AI bubbles for streaming
     if (currentText || currentThoughts || role === 'ai' || role === 'user') {
-        
         // --- Thinking Process (Optional) ---
         if (role === 'ai') {
             thoughtsDiv = document.createElement('div');
             thoughtsDiv.className = 'thoughts-container';
-            // Only show if we have thoughts
-            if (!currentThoughts) thoughtsDiv.style.display = 'none';
-            
-            const details = document.createElement('details');
-            if (currentThoughts) details.open = true; // Open by default if present initially
-            
-            const summary = document.createElement('summary');
-            summary.textContent = "Thinking Process"; // Can be localized
+            thoughtsDiv.hidden = !hasDisplayableThoughts(currentThoughts);
+
+            const regionId = `${THOUGHTS_REGION_PREFIX}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+            thoughtsToggle = document.createElement('button');
+            thoughtsToggle.type = 'button';
+            thoughtsToggle.className = 'thoughts-toggle';
+            thoughtsToggle.setAttribute('aria-controls', regionId);
+
+            const arrow = document.createElement('span');
+            arrow.className = 'thoughts-arrow';
+            arrow.setAttribute('aria-hidden', 'true');
+            arrow.textContent = '›';
+
+            thoughtsStatus = document.createElement('span');
+            thoughtsStatus.className = 'thoughts-status';
             
             thoughtsContent = document.createElement('div');
+            thoughtsContent.id = regionId;
             thoughtsContent.className = 'thoughts-content';
             renderContent(thoughtsContent, currentThoughts || "", 'ai');
-            
-            details.appendChild(summary);
-            details.appendChild(thoughtsContent);
-            thoughtsDiv.appendChild(details);
+
+            thoughtsToggle.appendChild(arrow);
+            thoughtsToggle.appendChild(thoughtsStatus);
+            thoughtsToggle.addEventListener('click', () => {
+                setThoughtsExpanded(!thoughtsExpanded);
+            });
+
+            thoughtsDiv.appendChild(thoughtsToggle);
+            thoughtsDiv.appendChild(thoughtsContent);
             div.appendChild(thoughtsDiv);
+            setThoughtsExpanded(options.isStreaming && hasDisplayableThoughts(currentThoughts));
+            updateThoughts(undefined, {
+                isStreaming: options.isStreaming,
+                isFinal: options.isFinal
+            });
         }
 
         contentDiv = document.createElement('div');
@@ -415,7 +508,7 @@ export function appendMessage(container, text, role, attachment = null, thoughts
     // Return controller
     return {
         div,
-        update: (newText, newThoughts) => {
+        update: (newText, newThoughts, state = {}) => {
             if (newText !== undefined) {
                 currentText = newText;
                 if (contentDiv) {
@@ -423,17 +516,20 @@ export function appendMessage(container, text, role, attachment = null, thoughts
                 }
             }
             
-            if (newThoughts !== undefined && thoughtsContent) {
-                currentThoughts = newThoughts;
-                renderContent(thoughtsContent, currentThoughts || "", 'ai');
-                if (currentThoughts) {
-                    thoughtsDiv.style.display = 'block';
-                }
-            }
+            updateThoughts(newThoughts, state);
             
             // Note: We removed the auto-scroll-to-bottom logic here.
             // If the user is at the start of the message, we want them to stay there
             // as the content expands downwards.
+        },
+        finalize: (newText, newThoughts) => {
+            if (newText !== undefined) {
+                currentText = newText;
+                if (contentDiv) {
+                    renderContent(contentDiv, currentText, role);
+                }
+            }
+            updateThoughts(newThoughts, { isFinal: true });
         },
         // Function to update images if they arrive late (though mostly synchronous in final reply)
         addImages: (images) => {

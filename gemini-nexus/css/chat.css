@@ -292,42 +292,80 @@ body.layout-wide .msg.ai {
 
 /* --- Thinking Process Styles --- */
 .thoughts-container {
-    margin-bottom: 12px;
+    margin: 0 0 12px 0;
+    color: var(--text-secondary);
 }
 
-.thoughts-container details {
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    background: var(--bg-sidebar);
-    overflow: hidden;
-}
-
-.thoughts-container summary {
-    padding: 8px 12px;
+.thoughts-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    max-width: 100%;
+    padding: 0;
+    border: none;
+    background: transparent;
     font-size: 13px;
     font-weight: 500;
     color: var(--text-secondary);
+    line-height: 1.4;
     cursor: pointer;
     user-select: none;
     outline: none;
-    background-color: var(--bg-sidebar);
-    transition: background-color 0.2s;
+    transition: color 0.2s;
 }
 
-.thoughts-container summary:hover {
-    background-color: var(--btn-hover);
+.thoughts-toggle:hover,
+.thoughts-toggle:focus-visible {
     color: var(--text-primary);
 }
 
+.thoughts-toggle:focus-visible {
+    box-shadow: 0 0 0 2px var(--border-focus);
+    border-radius: 4px;
+}
+
+.thoughts-arrow {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
+    color: var(--text-tertiary);
+    font-size: 18px;
+    line-height: 1;
+    transform: rotate(0deg);
+    transition: transform 0.18s ease, color 0.2s;
+}
+
+.thoughts-expanded .thoughts-arrow {
+    transform: rotate(90deg);
+}
+
+.thoughts-status {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
 .thoughts-content {
-    padding: 12px;
+    margin-top: 6px;
+    margin-left: 6px;
+    padding: 2px 0 2px 14px;
+    border-left: 2px solid var(--border-color);
     font-size: 13px;
     color: var(--text-secondary);
-    background-color: var(--bg-body);
-    border-top: 1px solid var(--border-color);
-    line-height: 1.5;
+    line-height: 1.55;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    opacity: 0.9;
+    opacity: 0.88;
+}
+
+.thoughts-content p {
+    margin-bottom: 8px;
+}
+
+.thoughts-content p:last-child {
+    margin-bottom: 0;
 }
 
 .sources-container {
