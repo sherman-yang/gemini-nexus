@@ -62,6 +62,18 @@ bubble.addImages(images);
 
 Use shared CSS files and existing CSS variables. Do not add frontend runtime styling libraries for isolated sandbox UI changes.
 
+### Pattern: Research Mature UI Interaction Patterns Before Tuning
+
+**What**: Before changing mature interaction patterns such as chat auto-scroll, sticky-to-bottom streaming, virtualized lists, drag/resize, focus management, or animation performance, inspect established implementations or official platform guidance first.
+
+**Why**: These behaviors have edge cases that are easy to miss by guessing, especially around user intent. For example, streaming chat should usually maintain a sticky-to-bottom state while the user remains near the bottom, use content-size observation to follow streamed growth, and stop following after the user scrolls away.
+
+**Contract**:
+- Prefer official browser APIs and documented patterns first, such as `scrollTo`, `scrollIntoView`, `MutationObserver`, `ResizeObserver`, and `IntersectionObserver`.
+- For app-level behavior, compare at least one mature implementation or library pattern before changing logic.
+- Preserve user intent: automatic following is allowed only while the user has not explicitly moved away from the followed region.
+- Record the implementation principle in the task notes or final summary when the behavior is subtle.
+
 ### Pattern: Lightweight Thinking / Reasoning Blocks
 
 **Problem**: Reasoning content is streamed separately from the final answer and should be inspectable without dominating the message.

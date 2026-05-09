@@ -36,10 +36,11 @@ export class UIController {
         this.sendBtn = this.chat.sendBtn;
         this.modelSelect = elements.modelSelect;
         this.tabSwitcherBtn = document.getElementById('tab-switcher-btn');
+        this.layoutResizeFrame = null;
 
         // Initialize Layout Detection
         this.checkLayout();
-        window.addEventListener('resize', () => this.checkLayout());
+        window.addEventListener('resize', () => this.scheduleLayoutCheck());
     }
 
     checkLayout() {
@@ -50,6 +51,15 @@ export class UIController {
         } else {
             document.body.classList.remove('layout-wide');
         }
+    }
+
+    scheduleLayoutCheck() {
+        if (this.layoutResizeFrame !== null) return;
+
+        this.layoutResizeFrame = window.requestAnimationFrame(() => {
+            this.layoutResizeFrame = null;
+            this.checkLayout();
+        });
     }
 
     // --- DynamicModel List ---
@@ -113,10 +123,10 @@ export class UIController {
             this.modelSelect.dispatchEvent(new Event('change'));
         }
         
-        this._resizeModelSelect();
+        this.resizeModelSelect();
     }
 
-    _resizeModelSelect() {
+    resizeModelSelect() {
         const select = this.modelSelect;
         if (!select) return;
         
@@ -147,7 +157,10 @@ export class UIController {
     // Chat / Input
     updateStatus(text) { this.chat.updateStatus(text); }
     clearChatHistory() { this.chat.clear(); }
-    scrollToBottom() { this.chat.scrollToBottom(); }
+    getChatScrollState() { return this.chat.getScrollState(); }
+    restoreChatScrollState(state) { this.chat.restoreScrollState(state); }
+    followStreamingContent() { this.chat.followStreamingContent(); }
+    scrollToBottom(options) { this.chat.scrollToBottom(options); }
     resetInput() { this.chat.resetInput(); }
     setLoading(isLoading) { this.chat.setLoading(isLoading); }
     

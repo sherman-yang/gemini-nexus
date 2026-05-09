@@ -806,13 +806,17 @@ export function appendMessage(container, text, role, attachment = null, thoughts
     // --- Scroll Logic ---
     // Instead of scrolling to bottom, we scroll to the top of the NEW message.
     // This allows users to read from the start while content streams in below.
-    setTimeout(() => {
-        const topPos = div.offsetTop - 20; // 20px padding context
-        container.scrollTo({
-            top: topPos,
-            behavior: 'smooth'
-        });
-    }, 10);
+    // Restored history renders disable this and let the session flow choose one
+    // final scroll position after all messages are rebuilt.
+    if (options.autoScroll !== false) {
+        setTimeout(() => {
+            const topPos = div.offsetTop - 20; // 20px padding context
+            container.scrollTo({
+                top: topPos,
+                behavior: 'smooth'
+            });
+        }, 10);
+    }
 
     // Return controller
     const controller = {

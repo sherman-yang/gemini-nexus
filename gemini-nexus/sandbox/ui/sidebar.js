@@ -21,6 +21,7 @@ export class SidebarController {
         this.itemCallbacks = null;
         this.renderState = { isGenerating: false, generatingSessionId: null };
         this.fuse = null;
+        this.focusTimer = null;
 
         this.initListeners();
     }
@@ -46,18 +47,34 @@ export class SidebarController {
     }
 
     toggle() {
-        if (this.sidebar) this.sidebar.classList.toggle('open');
-        if (this.overlay) this.overlay.classList.toggle('visible');
-        
-        // Auto-focus search if opening
-        if (this.sidebar && this.sidebar.classList.contains('open') && this.searchInput) {
-            setTimeout(() => this.searchInput.focus(), 100);
+        if (!this.sidebar) return;
+
+        const willOpen = !this.sidebar.classList.contains('open');
+        this.sidebar.classList.toggle('open', willOpen);
+        if (this.overlay) {
+            this.overlay.classList.toggle('visible', willOpen);
+        }
+
+        this._clearFocusTimer();
+
+        if (willOpen && this.searchInput) {
+            this.focusTimer = window.setTimeout(() => {
+                this.focusTimer = null;
+                this.searchInput.focus({ preventScroll: true });
+            }, 220);
         }
     }
 
     close() {
+        this._clearFocusTimer();
         if (this.sidebar) this.sidebar.classList.remove('open');
         if (this.overlay) this.overlay.classList.remove('visible');
+    }
+
+    _clearFocusTimer() {
+        if (this.focusTimer === null) return;
+        window.clearTimeout(this.focusTimer);
+        this.focusTimer = null;
     }
 
     _initSearch() {
@@ -116,7 +133,7 @@ export class SidebarController {
     }
 
     _renderDOM(sessions) {
-        this.listEl.innerHTML = '';
+        const fragment = document.createDocumentFragment();
         
         if (sessions.length === 0) {
             const emptyEl = document.createElement('div');
@@ -125,7 +142,8 @@ export class SidebarController {
             emptyEl.style.color = 'var(--text-tertiary)';
             emptyEl.style.fontSize = '13px';
             emptyEl.textContent = t('noConversations');
-            this.listEl.appendChild(emptyEl);
+            fragment.appendChild(emptyEl);
+            this.listEl.replaceChildren(fragment);
             return;
         }
 
@@ -168,7 +186,9 @@ export class SidebarController {
                 item.appendChild(spinner);
             }
             item.appendChild(delBtn);
-            this.listEl.appendChild(item);
+            fragment.appendChild(item);
         });
+
+        this.listEl.replaceChildren(fragment);
     }
 }

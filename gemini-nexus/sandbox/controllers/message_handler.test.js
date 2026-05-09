@@ -10,7 +10,8 @@ vi.mock('../render/message.js', () => ({
     appendMessage: vi.fn(() => ({
         addImages: vi.fn(),
         addSources: vi.fn(),
-        finalize: vi.fn()
+        finalize: vi.fn(),
+        update: vi.fn()
     }))
 }));
 
@@ -42,7 +43,9 @@ function createMessageHandlerHarness() {
     sessionManager.setCurrentId('session-1');
 
     const ui = {
+        getChatScrollState: vi.fn(() => ({ isNearBottom: true })),
         historyDiv: document.createElement('div'),
+        followStreamingContent: vi.fn(),
         scrollToBottom: vi.fn(),
         setLoading: vi.fn()
     };

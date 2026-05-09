@@ -36,6 +36,8 @@ function createUi() {
         modelSelect: { value: 'gemini-test' },
         renderHistoryList: vi.fn(),
         resetInput: vi.fn(),
+        getChatScrollState: vi.fn(() => ({ scrollTop: 120, isNearBottom: false })),
+        restoreChatScrollState: vi.fn(),
         scrollToBottom: vi.fn(),
         settings: {
             updateContextSettings: vi.fn(),
@@ -171,6 +173,9 @@ describe('AppController session restore behavior', () => {
 
         expect(sessionManager.currentSessionId).toBe('real');
         expect(ui.clearChatHistory).toHaveBeenCalled();
+        expect(ui.getChatScrollState).toHaveBeenCalled();
+        expect(ui.restoreChatScrollState).toHaveBeenCalledWith({ scrollTop: 120, isNearBottom: false });
+        expect(ui.scrollToBottom).not.toHaveBeenCalled();
         expect(markRendered).toHaveBeenCalledWith('real', 2);
     });
 });

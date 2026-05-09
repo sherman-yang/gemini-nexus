@@ -82,29 +82,41 @@ export function bindAppEvents(app, ui, setResizeRef) {
     const modelSelect = document.getElementById('model-select');
     
     // Auto-resize Logic
+    let resizeModelSelectFrame = null;
     const resizeModelSelect = () => {
-        if (!modelSelect) return;
-        
-        // Safety: Ensure selectedIndex is valid
-        if (modelSelect.selectedIndex === -1) {
-            if (modelSelect.options.length > 0) modelSelect.selectedIndex = 0;
-        }
-        if (modelSelect.selectedIndex === -1) return;
+        if (resizeModelSelectFrame !== null) return;
 
-        const tempSpan = document.createElement('span');
-        Object.assign(tempSpan.style, {
-            visibility: 'hidden',
-            position: 'absolute',
-            fontSize: '13px',
-            fontWeight: '500',
-            fontFamily: window.getComputedStyle(modelSelect).fontFamily,
-            whiteSpace: 'nowrap'
+        resizeModelSelectFrame = window.requestAnimationFrame(() => {
+            resizeModelSelectFrame = null;
+
+            if (ui.resizeModelSelect) {
+                ui.resizeModelSelect();
+                return;
+            }
+
+            if (!modelSelect) return;
+        
+            // Safety: Ensure selectedIndex is valid
+            if (modelSelect.selectedIndex === -1) {
+                if (modelSelect.options.length > 0) modelSelect.selectedIndex = 0;
+            }
+            if (modelSelect.selectedIndex === -1) return;
+
+            const tempSpan = document.createElement('span');
+            Object.assign(tempSpan.style, {
+                visibility: 'hidden',
+                position: 'absolute',
+                fontSize: '13px',
+                fontWeight: '500',
+                fontFamily: window.getComputedStyle(modelSelect).fontFamily,
+                whiteSpace: 'nowrap'
+            });
+            tempSpan.textContent = modelSelect.options[modelSelect.selectedIndex].text;
+            document.body.appendChild(tempSpan);
+            const width = tempSpan.getBoundingClientRect().width;
+            document.body.removeChild(tempSpan);
+            modelSelect.style.width = `${width + 34}px`;
         });
-        tempSpan.textContent = modelSelect.options[modelSelect.selectedIndex].text;
-        document.body.appendChild(tempSpan);
-        const width = tempSpan.getBoundingClientRect().width;
-        document.body.removeChild(tempSpan);
-        modelSelect.style.width = `${width + 34}px`;
     };
     
     if (setResizeRef) setResizeRef(resizeModelSelect); // Expose for message handler

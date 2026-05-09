@@ -102,6 +102,26 @@ describe('SessionFlowController', () => {
         expect(sessionManager.currentSessionId).toBe('session-1');
         expect(ui.clearChatHistory).toHaveBeenCalled();
         expect(appendMessage).toHaveBeenCalledTimes(2);
+        expect(appendMessage).toHaveBeenNthCalledWith(
+            1,
+            ui.historyDiv,
+            'Hello',
+            'user',
+            undefined,
+            undefined,
+            undefined,
+            expect.objectContaining({ autoScroll: false })
+        );
+        expect(appendMessage).toHaveBeenNthCalledWith(
+            2,
+            ui.historyDiv,
+            'Hi there',
+            'ai',
+            undefined,
+            'thinking',
+            undefined,
+            expect.objectContaining({ autoScroll: false })
+        );
         expect(app.boundSessionId).toBe('session-1');
         expect(app.saveCurrentTabSessionBinding).toHaveBeenCalledWith('session-1');
         expect(sendToBackground).toHaveBeenCalledWith({
@@ -111,6 +131,19 @@ describe('SessionFlowController', () => {
         });
         expect(ui.scrollToBottom).toHaveBeenCalled();
         expect(ui.resetInput).toHaveBeenCalled();
+    });
+
+    it('restores a supplied scroll state after rebuilding a session', () => {
+        const { app, controller, sessionManager, ui } = createSessionFlowHarness();
+        const scrollState = { scrollTop: 320, isNearBottom: false };
+        ui.restoreChatScrollState = vi.fn();
+        sessionManager.setSessions([realSession()]);
+
+        controller.switchToSession('session-1', { restoreScrollState: scrollState });
+
+        expect(ui.restoreChatScrollState).toHaveBeenCalledWith(scrollState);
+        expect(ui.scrollToBottom).not.toHaveBeenCalled();
+        expect(app.boundSessionId).toBe('session-1');
     });
 
     it('deleting the last current session saves empty history and returns to draft', () => {

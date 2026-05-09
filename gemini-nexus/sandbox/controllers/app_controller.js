@@ -187,7 +187,8 @@ export class AppController {
         const session = this.sessionManager.getSessionById(sessionId);
         if (!this.hasNewAiMessage(session, previousMessageCount)) return false;
 
-        this.switchToSession(sessionId);
+        const scrollState = this.ui.getChatScrollState ? this.ui.getChatScrollState() : null;
+        this.sessionFlow.switchToSession(sessionId, { restoreScrollState: scrollState });
         this.messageHandler.markSessionRenderedFromStorage(sessionId, this.getMessageCount(session));
         return true;
     }

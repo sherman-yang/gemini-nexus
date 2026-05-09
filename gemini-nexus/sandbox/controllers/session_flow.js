@@ -26,7 +26,7 @@ export class SessionFlowController {
         this.refreshHistoryUI();
     }
 
-    switchToSession(sessionId) {
+    switchToSession(sessionId, options = {}) {
         this.app.messageHandler.resetStream();
         this.sessionManager.setCurrentId(sessionId);
         
@@ -56,6 +56,7 @@ export class SessionFlowController {
                 callCount: this.getRestoredToolCallCount(msg),
                 isCollapsed: true,
                 thoughtsDurationSeconds: msg.thoughtsDurationSeconds,
+                autoScroll: false,
                 onEdit: msg.role === 'user' && this.getMessageKind(msg) !== 'tool-output'
                     ? this.app.prompt.getMessageEditOptions(index).onEdit
                     : null
@@ -65,7 +66,11 @@ export class SessionFlowController {
             this.appendRestoredCompressionNotice();
         }
         this.app.messageHandler.restoreStreamForSession(sessionId);
-        this.ui.scrollToBottom();
+        if (options.restoreScrollState && this.ui.restoreChatScrollState) {
+            this.ui.restoreChatScrollState(options.restoreScrollState);
+        } else {
+            this.ui.scrollToBottom(options.scrollOptions);
+        }
 
         this.app.boundSessionId = sessionId;
         this.app.saveCurrentTabSessionBinding(sessionId);
