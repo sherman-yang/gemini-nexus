@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
-const distDir = path.join(rootDir, 'dist');
 const artifactsDir = path.join(rootDir, 'artifacts');
 const packageDir = path.join(artifactsDir, 'chrome-extension');
 
@@ -21,6 +20,12 @@ const requiredPaths = [
   'dist/sandbox/index.html',
 ];
 
+export function shouldExcludeFromPackage(relativePath) {
+  const normalized = relativePath.split(path.sep).join('/');
+  const basename = path.basename(normalized);
+  return basename.endsWith('.test.js') || basename.endsWith('.test.ts');
+}
+
 async function ensureExists(relativePath) {
   const absolutePath = path.join(rootDir, relativePath);
   try {
@@ -34,7 +39,13 @@ async function copyIntoPackage(sourceRelativePath, targetRelativePath = sourceRe
   const source = path.join(rootDir, sourceRelativePath);
   const target = path.join(packageDir, targetRelativePath);
   await mkdir(path.dirname(target), { recursive: true });
-  await cp(source, target, { recursive: true });
+  await cp(source, target, {
+    recursive: true,
+    filter: (sourcePath) => {
+      const relativePath = path.relative(rootDir, sourcePath);
+      return !shouldExcludeFromPackage(relativePath);
+    }
+  });
 }
 
 async function removeJunkFiles(directory) {
@@ -94,7 +105,9 @@ async function main() {
   console.log(`Extension package prepared at ${path.relative(rootDir, packageDir)}`);
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exit(1);
-});
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main().catch((error) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exit(1);
+  });
+}
