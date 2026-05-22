@@ -1,14 +1,8 @@
+import { CONNECTION_STORAGE_KEYS } from '../../shared/settings/connection.js';
 import {
-    DEFAULT_CONTEXT_MODE,
-    DEFAULT_CONTEXT_RECENT_TURNS,
-    DEFAULT_SIDE_PANEL_SCOPE,
-} from '../../shared/config/constants.js';
-import {
-    CONNECTION_STORAGE_KEYS,
-    createConnectionSettingsPayload,
-} from '../../shared/settings/connection.js';
-
-const CONNECTION_STORAGE_KEY_SET = new Set(CONNECTION_STORAGE_KEYS);
+    createInitialRestoreMessages,
+    createLocalStorageRestoreMessages,
+} from './state_messages.js';
 
 export function getOwnerTabIdFromLocation(locationLike = window.location) {
     try {
@@ -142,63 +136,15 @@ export class StateManager {
         const frameWindow = this.frame.getWindow();
         if (!frameWindow) return;
 
-        const connectionSettings = createConnectionSettingsPayload(this.data);
-        const provider = connectionSettings.provider;
-        const selectedModel = connectionSettings.selectedModel;
-
-        // Restore settings first so the model list is ready before model selection.
-        this.frame.postMessage({
-            action: 'RESTORE_CONNECTION_SETTINGS',
-            payload: connectionSettings,
+        const restoreMessages = createInitialRestoreMessages(this.data, {
+            theme: localStorage.getItem('geminiTheme') || 'system',
+            language: localStorage.getItem('geminiLanguage') || 'system',
+            appVersion: `v${chrome.runtime.getManifest().version}`,
         });
 
-        this.frame.postMessage({
-            action: 'RESTORE_SIDEBAR_BEHAVIOR',
-            payload: this.data.geminiSidebarBehavior || 'auto',
-        });
-        this.frame.postMessage({
-            action: 'RESTORE_CONTEXT_SETTINGS',
-            payload: {
-                mode: this.data.geminiContextMode || DEFAULT_CONTEXT_MODE,
-                recentTurns: this.data.geminiContextRecentTurns || DEFAULT_CONTEXT_RECENT_TURNS,
-            },
-        });
-        this.frame.postMessage({
-            action: 'RESTORE_SIDE_PANEL_SCOPE',
-            payload: this.data.geminiSidePanelScope || DEFAULT_SIDE_PANEL_SCOPE,
-        });
+        restoreMessages.beforeTabContext.forEach((message) => this.frame.postMessage(message));
         this.postCurrentTabContext();
-        this.frame.postMessage({
-            action: 'RESTORE_SESSIONS',
-            payload: this.data.geminiSessions || [],
-        });
-        this.frame.postMessage({
-            action: 'RESTORE_SHORTCUTS',
-            payload: this.data.geminiShortcuts || null,
-        });
-
-        this.frame.postMessage({ action: 'RESTORE_MODEL', payload: selectedModel });
-
-        this.frame.postMessage({
-            action: 'RESTORE_TEXT_SELECTION',
-            payload: this.data.geminiTextSelectionEnabled !== false,
-        });
-        this.frame.postMessage({
-            action: 'RESTORE_TEXT_SELECTION_BLACKLIST',
-            payload: this.data.geminiTextSelectionBlacklist || '',
-        });
-        this.frame.postMessage({
-            action: 'RESTORE_IMAGE_TOOLS',
-            payload: this.data.geminiImageToolsEnabled !== false,
-        });
-        this.frame.postMessage({
-            action: 'RESTORE_ACCOUNT_INDICES',
-            payload: this.data.geminiAccountIndices || '0',
-        });
-        this.frame.postMessage({
-            action: 'RESTORE_APP_VERSION',
-            payload: `v${chrome.runtime.getManifest().version}`,
-        });
+        restoreMessages.afterTabContext.forEach((message) => this.frame.postMessage(message));
 
         // Replay deferred actions captured before the side panel was ready.
         if (this.data.pendingSessionId) {
@@ -228,12 +174,7 @@ export class StateManager {
             delete this.data.pendingMode;
         }
 
-        // Theme and language are mirrored in localStorage for early paint.
-        const cachedTheme = localStorage.getItem('geminiTheme') || 'system';
-        const cachedLang = localStorage.getItem('geminiLanguage') || 'system';
-
-        this.frame.postMessage({ action: 'RESTORE_LANGUAGE', payload: cachedLang });
-        this.frame.postMessage({ action: 'RESTORE_THEME', payload: cachedTheme });
+        restoreMessages.afterPendingActions.forEach((message) => this.frame.postMessage(message));
     }
 
     syncLocalStorageChanges(changes) {
@@ -248,85 +189,16 @@ export class StateManager {
 
         if (!this.hasInitialized) return;
 
-        const hasChanged = (key) => Object.prototype.hasOwnProperty.call(changes, key);
-
-        if (hasChanged('geminiShortcuts')) {
-            this.frame.postMessage({
-                action: 'RESTORE_SHORTCUTS',
-                payload: this.data.geminiShortcuts || null,
-            });
+        if (Object.prototype.hasOwnProperty.call(changes, 'geminiTheme')) {
+            localStorage.setItem('geminiTheme', this.data.geminiTheme || 'system');
+        }
+        if (Object.prototype.hasOwnProperty.call(changes, 'geminiLanguage')) {
+            localStorage.setItem('geminiLanguage', this.data.geminiLanguage || 'system');
         }
 
-        if (hasChanged('geminiTheme')) {
-            const theme = this.data.geminiTheme || 'system';
-            localStorage.setItem('geminiTheme', theme);
-            this.frame.postMessage({ action: 'RESTORE_THEME', payload: theme });
-        }
-
-        if (hasChanged('geminiLanguage')) {
-            const language = this.data.geminiLanguage || 'system';
-            localStorage.setItem('geminiLanguage', language);
-            this.frame.postMessage({ action: 'RESTORE_LANGUAGE', payload: language });
-        }
-
-        if (hasChanged('geminiSidebarBehavior')) {
-            this.frame.postMessage({
-                action: 'RESTORE_SIDEBAR_BEHAVIOR',
-                payload: this.data.geminiSidebarBehavior || 'auto',
-            });
-        }
-
-        if (hasChanged('geminiSidePanelScope')) {
-            this.frame.postMessage({
-                action: 'RESTORE_SIDE_PANEL_SCOPE',
-                payload: this.data.geminiSidePanelScope || DEFAULT_SIDE_PANEL_SCOPE,
-            });
-        }
-
-        if (hasChanged('geminiContextMode') || hasChanged('geminiContextRecentTurns')) {
-            this.frame.postMessage({
-                action: 'RESTORE_CONTEXT_SETTINGS',
-                payload: {
-                    mode: this.data.geminiContextMode || DEFAULT_CONTEXT_MODE,
-                    recentTurns: this.data.geminiContextRecentTurns || DEFAULT_CONTEXT_RECENT_TURNS,
-                },
-            });
-        }
-
-        if (hasChanged('geminiTextSelectionEnabled')) {
-            this.frame.postMessage({
-                action: 'RESTORE_TEXT_SELECTION',
-                payload: this.data.geminiTextSelectionEnabled !== false,
-            });
-        }
-
-        if (hasChanged('geminiTextSelectionBlacklist')) {
-            this.frame.postMessage({
-                action: 'RESTORE_TEXT_SELECTION_BLACKLIST',
-                payload: this.data.geminiTextSelectionBlacklist || '',
-            });
-        }
-
-        if (hasChanged('geminiImageToolsEnabled')) {
-            this.frame.postMessage({
-                action: 'RESTORE_IMAGE_TOOLS',
-                payload: this.data.geminiImageToolsEnabled !== false,
-            });
-        }
-
-        if (hasChanged('geminiAccountIndices')) {
-            this.frame.postMessage({
-                action: 'RESTORE_ACCOUNT_INDICES',
-                payload: this.data.geminiAccountIndices || '0',
-            });
-        }
-
-        if (changedKeys.some((key) => CONNECTION_STORAGE_KEY_SET.has(key))) {
-            this.frame.postMessage({
-                action: 'RESTORE_CONNECTION_SETTINGS',
-                payload: createConnectionSettingsPayload(this.data),
-            });
-        }
+        createLocalStorageRestoreMessages(this.data, changedKeys).forEach((message) =>
+            this.frame.postMessage(message)
+        );
     }
 
     updateSessions(sessions) {

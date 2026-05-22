@@ -1,0 +1,115 @@
+.mcp-summary-row > div:first-child {
+    min-width: 0;
+}
+
+.mcp-action-row {
+    flex-wrap: wrap;
+}
+
+.mcp-tool-list {
+    max-height: 220px;
+    overflow: auto;
+    padding: 8px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
+.mcp-tool-help-text {
+    font-size: 12px;
+    opacity: 0.85;
+}
+
+.mcp-tool-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mcp-tool-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.mcp-tool-row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.mcp-tool-name {
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.mcp-tool-full-name {
+    font-size: 11px;
+    opacity: 0.7;
+    overflow-wrap: anywhere;
+}
+
+.mcp-tool-description {
+    font-size: 11px;
+    opacity: 0.85;
+}
+
+.mcp-tool-group-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.mcp-tool-group-summary::-webkit-details-marker {
+    display: none;
+}
+
+.mcp-tool-group-summary-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.mcp-tool-group-title {
+    font-size: 12px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.mcp-tool-group-count {
+    font-size: 12px;
+    opacity: 0.85;
+    flex: 0 0 auto;
+}
+
+.mcp-tool-group-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 2px 2px;
+}
+
+.file-input-hidden {
+    display: none;
+}
+
+[data-theme='dark'] .mcp-tool-list {
+    background: var(--bg-input);
+    border-color: var(--border-color);
+}
+
+@media (max-width: 430px) {
+    .mcp-summary-row {
+        align-items: flex-start !important;
+    }
+}

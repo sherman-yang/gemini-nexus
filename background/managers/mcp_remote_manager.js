@@ -1,40 +1,17 @@
-import {
-    asHttpUrl,
-    asWsUrl,
-    hasHeaders,
-    inferTransport,
-    mergeHeaders,
-    normalizeHeaders,
-    stableHeadersKey,
-} from './mcp/transport.js';
 import { normalizeMcpToolResult } from './mcp/tool_result.js';
 import { filterToolsForPreamble, formatToolsPreamble } from './mcp/preamble.js';
 import { getActiveMcpServers, parseToolId, tagToolsForServer } from './mcp/server_tools.js';
-import { readSseStream } from './mcp/sse_stream.js';
 import {
     listPromptsForConnection,
     listResourceTemplatesForConnection,
     listResourcesForConnection,
     listToolsForConnection,
 } from './mcp/tool_listing.js';
-import { handleIncomingRpcMessage } from './mcp/rpc_messages.js';
-import { isStreamableHttpFallbackError, sendStreamableHttpRpc } from './mcp/streamable_http.js';
-import { initializeMcpHandshake } from './mcp/handshake.js';
-import {
-    bumpMcpIdleClose,
-    createMcpConnectionState,
-    disconnectMcpConnectionState,
-    rejectPendingMcpRequests,
-} from './mcp/connection_state.js';
+import { McpConnectionClient } from './mcp/connection_client.js';
 
 export class McpRemoteManager {
     constructor({ clientName = 'gemini-nexus', clientVersion = '0.0.0' } = {}) {
-        this.clientName = clientName;
-        this.clientVersion = clientVersion;
-
-        // Multi-connection support: Map<serverId, ConnectionState>
-        this.connections = new Map();
-        this.nextId = 1;
+        this.connectionClient = new McpConnectionClient({ clientName, clientVersion });
     }
 
     isEnabled(config) {
@@ -42,7 +19,6 @@ export class McpRemoteManager {
         return !!(enabled && config.mcpServerUrl);
     }
 
-    // Check if multi-server mode is enabled
     isMultiEnabled(config) {
         if (!config || config.enableMcpTools !== true) return false;
         const servers = config.mcpServers;
@@ -51,256 +27,17 @@ export class McpRemoteManager {
     }
 
     async disconnect(serverId) {
-        if (serverId) {
-            // Disconnect specific server
-            const conn = this.connections.get(serverId);
-            if (conn) {
-                this._disconnectState(conn);
-                this.connections.delete(serverId);
-            }
-        } else {
-            // Disconnect all
-            for (const conn of this.connections.values()) {
-                this._disconnectState(conn);
-            }
-            this.connections.clear();
-        }
-    }
-
-    _disconnectState(conn) {
-        disconnectMcpConnectionState(conn);
-    }
-
-    _resolvePendingRpcMessage(conn, msg) {
-        if (!msg || typeof msg !== 'object' || msg.id === undefined) return;
-
-        const entry = conn.pending.get(msg.id);
-        if (!entry) return;
-
-        clearTimeout(entry.timeout);
-        conn.pending.delete(msg.id);
-        if (msg.error) entry.reject(new Error(msg.error.message || 'MCP error'));
-        else entry.resolve(msg.result);
-    }
-
-    _bumpIdleClose(conn, serverId) {
-        bumpMcpIdleClose(conn, () => this.disconnect(serverId).catch(() => {}));
-    }
-
-    _clearPending(conn, error) {
-        rejectPendingMcpRequests(conn, error);
+        return this.connectionClient.disconnect(serverId);
     }
 
     async _sendRpc(conn, method, params) {
-        if (conn.transport === 'streamable-http') {
-            return sendStreamableHttpRpc(conn, method, params, {
-                nextId: () => this.nextId++,
-                initializeHandshake: () => this._initializeHandshake(conn),
-                onMessage: (msg) =>
-                    handleIncomingRpcMessage(conn, msg, (state, rpcMessage) =>
-                        this._resolvePendingRpcMessage(state, rpcMessage)
-                    ),
-            });
-        }
-
-        if (conn.transport === 'ws') {
-            if (!conn.ws || conn.ws.readyState !== WebSocket.OPEN) {
-                throw new Error('MCP WebSocket not connected');
-            }
-        } else if (conn.transport === 'sse') {
-            if (!conn.ssePostUrl) {
-                throw new Error('MCP SSE not connected');
-            }
-        } else {
-            throw new Error('MCP transport not connected');
-        }
-
-        const id = this.nextId++;
-        const msg = {
-            jsonrpc: '2.0',
-            id,
-            method,
-            params: params || {},
-        };
-
-        const requestPromise = new Promise((resolve, reject) => {
-            const timeout = setTimeout(() => {
-                conn.pending.delete(id);
-                reject(new Error(`MCP request timeout: ${method}`));
-            }, 30000);
-
-            conn.pending.set(id, { resolve, reject, timeout });
-        });
-
-        if (conn.transport === 'ws') {
-            conn.ws.send(JSON.stringify(msg));
-        } else {
-            fetch(conn.ssePostUrl, {
-                method: 'POST',
-                headers: mergeHeaders({ 'Content-Type': 'application/json' }, conn.headers),
-                body: JSON.stringify(msg),
-            }).catch((error) => {
-                const entry = conn.pending.get(id);
-                if (entry) {
-                    clearTimeout(entry.timeout);
-                    conn.pending.delete(id);
-                    entry.reject(new Error(`MCP POST failed: ${error?.message || String(error)}`));
-                }
-            });
-        }
-        return requestPromise;
-    }
-
-    // Get or create connection for a server
-    _getOrCreateConnection(serverId) {
-        if (!this.connections.has(serverId)) {
-            this.connections.set(serverId, createMcpConnectionState());
-        }
-        return this.connections.get(serverId);
+        return this.connectionClient.sendRpc(conn, method, params);
     }
 
     async _ensureConnectedForServer(serverId, transport, url, headers = {}) {
-        const conn = this._getOrCreateConnection(serverId);
-        const transportLower = inferTransport(transport, url);
-        const normalizedHeaders = normalizeHeaders(headers);
-        const headerKey = stableHeadersKey(normalizedHeaders);
-
-        if (transportLower === 'ws' || transportLower === 'websocket') {
-            if (hasHeaders(normalizedHeaders)) {
-                throw new Error(
-                    'Custom MCP headers are not supported for WebSocket transport in browser extensions. Use SSE or Streamable HTTP.'
-                );
-            }
-
-            const wsUrl = asWsUrl(url);
-            if (!wsUrl) throw new Error('Invalid MCP server URL');
-            const key = `ws:${wsUrl}`;
-
-            if (
-                conn.ws &&
-                conn.ws.readyState === WebSocket.OPEN &&
-                conn.initialized &&
-                conn.configKey === key
-            ) {
-                this._bumpIdleClose(conn, serverId);
-                return conn;
-            }
-
-            this._disconnectState(conn);
-            conn.configKey = key;
-            conn.transport = 'ws';
-            conn.headers = {};
-
-            await new Promise((resolve, reject) => {
-                const ws = new WebSocket(wsUrl);
-                conn.ws = ws;
-                let opened = false;
-
-                const onOpen = () => {
-                    opened = true;
-                    resolve();
-                };
-                const onError = () => {
-                    if (!opened) reject(new Error(`Failed to connect to MCP WebSocket: ${wsUrl}`));
-                };
-                const onClose = () => {
-                    const err = new Error(`MCP WebSocket closed: ${wsUrl}`);
-                    this._clearPending(conn, err);
-                    conn.ws = null;
-                    conn.initialized = false;
-                    conn.configKey = null;
-                    conn.transport = null;
-                    if (!opened) reject(err);
-                };
-                const onMessage = (event) => {
-                    try {
-                        const msg = JSON.parse(event.data);
-                        handleIncomingRpcMessage(conn, msg, (state, rpcMessage) =>
-                            this._resolvePendingRpcMessage(state, rpcMessage)
-                        );
-                    } catch {}
-                };
-
-                ws.addEventListener('open', onOpen);
-                ws.addEventListener('error', onError);
-                ws.addEventListener('close', onClose);
-                ws.addEventListener('message', onMessage);
-            });
-
-            await this._initializeHandshake(conn);
-            this._bumpIdleClose(conn, serverId);
-            return conn;
-        }
-
-        if (transportLower === 'sse') {
-            const sseUrlStr = asHttpUrl(url);
-            if (!sseUrlStr) throw new Error('Invalid MCP SSE URL');
-            const key = `sse:${sseUrlStr}:${headerKey}`;
-
-            if (
-                conn.transport === 'sse' &&
-                conn.initialized &&
-                conn.configKey === key &&
-                conn.ssePostUrl
-            ) {
-                this._bumpIdleClose(conn, serverId);
-                return conn;
-            }
-
-            this._disconnectState(conn);
-            conn.configKey = key;
-            conn.transport = 'sse';
-            conn.headers = normalizedHeaders;
-
-            await this._connectSse(conn, sseUrlStr);
-            await this._initializeHandshake(conn);
-            this._bumpIdleClose(conn, serverId);
-            return conn;
-        }
-
-        if (transportLower === 'streamable-http' || transportLower === 'streamablehttp') {
-            const httpUrl = asHttpUrl(url);
-            if (!httpUrl) throw new Error('Invalid Streamable HTTP URL');
-            const key = `streamable-http:${httpUrl}:${headerKey}`;
-
-            if (
-                conn.initialized &&
-                conn.configKey === key &&
-                ((conn.transport === 'streamable-http' && conn.httpPostUrl) ||
-                    (conn.transport === 'sse' && conn.ssePostUrl))
-            ) {
-                this._bumpIdleClose(conn, serverId);
-                return conn;
-            }
-
-            this._disconnectState(conn);
-            conn.configKey = key;
-            conn.transport = 'streamable-http';
-            conn.httpPostUrl = httpUrl;
-            conn.headers = normalizedHeaders;
-            conn.sessionId = null;
-            conn.protocolVersion = null;
-
-            try {
-                await this._initializeHandshake(conn);
-            } catch (error) {
-                if (!isStreamableHttpFallbackError(error)) throw error;
-
-                this._disconnectState(conn);
-                conn.configKey = key;
-                conn.transport = 'sse';
-                conn.headers = normalizedHeaders;
-                await this._connectSse(conn, httpUrl);
-                await this._initializeHandshake(conn);
-            }
-            this._bumpIdleClose(conn, serverId);
-            return conn;
-        }
-
-        throw new Error(`Unsupported MCP transport: ${transport}`);
+        return this.connectionClient.ensureConnectedForServer(serverId, transport, url, headers);
     }
 
-    // Legacy single-server compatibility
     async _ensureConnected(config) {
         if (!this.isEnabled(config)) {
             throw new Error('MCP is not enabled or server URL is missing.');
@@ -312,56 +49,6 @@ export class McpRemoteManager {
             config.mcpServerUrl,
             config.mcpHeaders
         );
-    }
-
-    async _connectSse(conn, sseUrlStr) {
-        const sseUrl = new URL(sseUrlStr);
-        const abort = new AbortController();
-        conn.sseAbort = abort;
-        conn.ssePostUrl = null;
-
-        const endpointPromise = new Promise((resolve, reject) => {
-            const timeout = setTimeout(
-                () => reject(new Error('MCP SSE endpoint handshake timeout')),
-                10000
-            );
-            conn._resolveSseEndpoint = (url) => {
-                clearTimeout(timeout);
-                resolve(url);
-            };
-        });
-
-        const response = await fetch(sseUrl.toString(), {
-            method: 'GET',
-            headers: mergeHeaders(
-                { Accept: 'text/event-stream', 'Cache-Control': 'no-cache' },
-                conn.headers
-            ),
-            signal: abort.signal,
-        });
-
-        if (!response.ok)
-            throw new Error(`MCP SSE connect failed (${response.status}): ${response.statusText}`);
-        if (!response.body) throw new Error('MCP SSE response has no body');
-
-        conn.sseReaderTask = readSseStream(conn, response.body.getReader(), sseUrl, {
-            resolvePendingRpcMessage: (msg) =>
-                handleIncomingRpcMessage(conn, msg, (state, rpcMessage) =>
-                    this._resolvePendingRpcMessage(state, rpcMessage)
-                ),
-            clearPending: (error) => this._clearPending(conn, error),
-        }).catch(() => {});
-
-        const postUrl = await endpointPromise;
-        conn.ssePostUrl = postUrl;
-    }
-
-    async _initializeHandshake(conn) {
-        return initializeMcpHandshake(conn, {
-            clientName: this.clientName,
-            clientVersion: this.clientVersion,
-            sendRpc: (method, params) => this._sendRpc(conn, method, params),
-        });
     }
 
     async _listToolsForConnection(conn) {
@@ -388,7 +75,6 @@ export class McpRemoteManager {
         );
     }
 
-    // List tools for a single server (legacy compatibility)
     async listTools(config) {
         const conn = await this._ensureConnected(config);
         return this._listToolsForConnection(conn);
@@ -419,13 +105,11 @@ export class McpRemoteManager {
         return this._listResourceTemplatesForConnection(conn);
     }
 
-    // List tools for a specific server by ID
     async listToolsForServer(serverId, transport, url, headers = {}) {
         const conn = await this._ensureConnectedForServer(serverId, transport, url, headers);
         return this._listToolsForConnection(conn);
     }
 
-    // List tools from all enabled servers (multi-server mode)
     async listAllActiveTools(servers) {
         const activeServers = getActiveMcpServers(servers);
         if (activeServers.length === 0) return [];
@@ -454,7 +138,6 @@ export class McpRemoteManager {
         return allTools;
     }
 
-    // Call tool (legacy single-server)
     async callTool(config, toolName, args) {
         const conn = await this._ensureConnected(config);
 
@@ -466,7 +149,6 @@ export class McpRemoteManager {
         return normalizeMcpToolResult(result);
     }
 
-    // Call tool by full tool ID (multi-server mode): serverId__toolName
     async callToolById(toolId, args, servers) {
         const { serverId, toolName } = parseToolId(toolId);
 
@@ -489,7 +171,6 @@ export class McpRemoteManager {
         return normalizeMcpToolResult(result);
     }
 
-    // Build preamble for multi-server mode
     async buildToolsPreamble(config) {
         const servers = config.mcpServers;
         const isMulti = this.isMultiEnabled(config);

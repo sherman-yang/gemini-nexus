@@ -163,7 +163,6 @@ export class SnapshotFormatter {
                             parts.push(this.booleanPropertyMap[key]);
                         }
 
-                        // State: If true, print the state itself
                         if (propertyValue === true) {
                             parts.push(key);
                         }

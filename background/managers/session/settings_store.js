@@ -72,13 +72,11 @@ export async function getConnectionSettings() {
 
     return {
         provider: provider,
-        // Official
         officialBaseUrl: stored.geminiOfficialBaseUrl || DEFAULT_OFFICIAL_BASE_URL,
         apiKey: activeApiKey,
         officialModel: stored.geminiOfficialModel || DEFAULT_OFFICIAL_MODELS,
         thinkingLevel: stored.geminiThinkingLevel || DEFAULT_THINKING_LEVEL,
         officialWebSearch: stored.geminiOfficialWebSearch === true,
-        // OpenAI
         openaiBaseUrl: stored.geminiOpenaiBaseUrl,
         openaiApiKey: stored.geminiOpenaiApiKey,
         openaiModel: stored.geminiOpenaiModel,

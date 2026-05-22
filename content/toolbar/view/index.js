@@ -165,7 +165,7 @@
         getSelectedModel() {
             return this.elements.askModelSelect
                 ? this.elements.askModelSelect.value
-                : 'gemini-3-flash';
+                : '8c46e95b1a07cecc';
         }
 
         setSelectedProvider(provider) {
@@ -192,10 +192,10 @@
 
             select.innerHTML = '';
             options.forEach((option) => {
-                const opt = document.createElement('option');
-                opt.value = option.value;
-                opt.textContent = option.label;
-                select.appendChild(opt);
+                const optionElement = document.createElement('option');
+                optionElement.value = option.value;
+                optionElement.textContent = option.label;
+                select.appendChild(optionElement);
             });
 
             // Select value if valid, otherwise first option

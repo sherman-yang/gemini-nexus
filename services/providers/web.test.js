@@ -46,7 +46,7 @@ describe('sendWebMessage', () => {
         const response = await sendWebMessage(
             '只回复 PROJECT_OK',
             context,
-            'gemini-3-flash-thinking',
+            '56fdd199312815e2',
             [],
             undefined
         );
@@ -66,7 +66,7 @@ describe('sendWebMessage', () => {
         expect(init.headers['x-goog-ext-73010989-jspb']).toBe('[0]');
         expect(init.headers['x-goog-ext-73010990-jspb']).toBe('[0,0,0]');
         expect(init.headers['x-goog-ext-525005358-jspb']).toMatch(/^\["[0-9A-F-]{36}",1\]$/);
-        expect(init.headers['x-goog-ext-525001261-jspb']).toContain('e051ce1aa80aa576');
+        expect(init.headers['x-goog-ext-525001261-jspb']).toContain('56fdd199312815e2');
 
         const body = init.body;
         expect(body.get('at')).toBe('at-token');
@@ -91,7 +91,7 @@ describe('sendWebMessage', () => {
         const response = await sendWebMessage(
             '只回复 PROJECT_OK',
             context,
-            'gemini-3-flash',
+            '8c46e95b1a07cecc',
             [],
             undefined
         );
@@ -111,33 +111,25 @@ describe('sendWebMessage', () => {
         ]);
     });
 
-    it('uses the Nano Banana Pro image-preview header for Web image generation', async () => {
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            body: makeStream(buildGeminiLine()),
-        });
+    it('rejects removed Web image-preview models instead of sending them', async () => {
+        global.fetch = vi.fn();
 
-        const context = {
-            atValue: 'at-token',
-            blValue: 'boq_assistant-bard-web-server_20260511.16_p5',
-            fSid: '3956664217185504700',
-            locale: 'zh-CN',
-            authUser: '0',
-        };
-
-        await sendWebMessage(
-            '生成一张图片',
-            context,
-            'gemini-3-pro-image-preview-11-2025',
-            [],
-            undefined
-        );
-
-        const [, init] = global.fetch.mock.calls[0];
-        const header = JSON.parse(init.headers['x-goog-ext-525001261-jspb']);
-        expect(header[4]).toBe('56fdd199312815e2');
-        expect(header[11]).toBe(2);
-        expect(header[14]).toBe(14);
+        await expect(
+            sendWebMessage(
+                '生成一张图片',
+                {
+                    atValue: 'at-token',
+                    blValue: 'boq_assistant-bard-web-server_20260511.16_p5',
+                    fSid: '3956664217185504700',
+                    locale: 'zh-CN',
+                    authUser: '0',
+                },
+                'gemini-3-pro-image-preview-11-2025',
+                [],
+                undefined
+            )
+        ).rejects.toThrow('Unsupported Gemini Web model: gemini-3-pro-image-preview-11-2025');
+        expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('passes current Gemini upload tokens through file uploads before streaming', async () => {
@@ -173,7 +165,7 @@ describe('sendWebMessage', () => {
         await sendWebMessage(
             '分析这张图',
             context,
-            'gemini-3-flash',
+            '8c46e95b1a07cecc',
             [
                 {
                     name: 'image.png',
@@ -241,7 +233,7 @@ describe('sendWebMessage', () => {
                     locale: 'zh-CN',
                     authUser: '0',
                 },
-                'gemini-3-flash',
+                '8c46e95b1a07cecc',
                 [],
                 undefined
             )

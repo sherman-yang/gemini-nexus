@@ -13,7 +13,7 @@ function parseJsonObject(text) {
     try {
         const parsed = JSON.parse(text);
         return isPlainObject(parsed) ? parsed : null;
-    } catch (_) {
+    } catch {
         return null;
     }
 }

@@ -1,0 +1,115 @@
+.settings-input.settings-full-input {
+    width: 100%;
+}
+
+.settings-input.settings-select {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    text-align: left;
+    font-family: inherit;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235f6368' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 36px;
+    cursor: pointer;
+}
+
+.settings-input.settings-select.relaxed {
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.setting-radio-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-radio-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    margin: 0 -8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+    cursor: pointer;
+}
+
+.setting-radio-option:hover {
+    background: var(--btn-hover);
+}
+
+.setting-radio-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    cursor: pointer;
+    flex: 1;
+}
+
+.setting-radio-option input[type='radio'],
+.setting-radio-option input[type='checkbox'],
+.setting-radio-choice input[type='radio'],
+.setting-radio-choice input[type='checkbox'] {
+    margin: 0;
+    accent-color: var(--primary);
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.setting-radio-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.setting-radio-desc {
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+}
+
+.setting-shortcut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.setting-shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 12px;
+    margin: 0 -8px;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.setting-shortcut-row:hover {
+    background: var(--btn-hover);
+}
+
+.setting-shortcut-title {
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.setting-shortcut-row .shortcut-input {
+    flex: 0 0 140px;
+}
+
+.setting-shortcut-static-row .shortcut-input {
+    color: var(--text-tertiary);
+    background: var(--bg-body);
+    cursor: default;
+}

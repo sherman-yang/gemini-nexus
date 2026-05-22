@@ -110,7 +110,7 @@ describe('manifest content scripts', () => {
         expect(modelOptionsIndex).toBeGreaterThan(-1);
         for (const dependentFile of [
             'content/toolbar/templates.js',
-            'content/toolbar/ui/manager.js',
+            'content/toolbar/ui/toolbar_ui.js',
             'content/toolbar/actions.js',
         ]) {
             expect(modelOptionsIndex).toBeLessThan(listedFiles.indexOf(dependentFile));
@@ -139,13 +139,27 @@ describe('manifest content scripts', () => {
         const listedFiles = manifest.content_scripts.flatMap((entry) => entry.js ?? []);
         const dragControllerIndex = listedFiles.indexOf('content/toolbar/drag_controller.js');
         const inputManagerIndex = listedFiles.indexOf('content/toolbar/input_manager.js');
+        const customSelectionToolsIndex = listedFiles.indexOf(
+            'content/toolbar/ui/custom_selection_tools.js'
+        );
+        const translationTargetStoreIndex = listedFiles.indexOf(
+            'content/toolbar/ui/translation_target_store.js'
+        );
 
         expect(dragControllerIndex).toBeGreaterThan(-1);
         expect(inputManagerIndex).toBeGreaterThan(-1);
+        expect(customSelectionToolsIndex).toBeGreaterThan(-1);
+        expect(translationTargetStoreIndex).toBeGreaterThan(-1);
         expect(listedFiles).not.toContain('content/toolbar/utils/drag.js');
         expect(listedFiles).not.toContain('content/toolbar/utils/input.js');
         expect(dragControllerIndex).toBeLessThan(
-            listedFiles.indexOf('content/toolbar/ui/manager.js')
+            listedFiles.indexOf('content/toolbar/ui/toolbar_ui.js')
+        );
+        expect(customSelectionToolsIndex).toBeLessThan(
+            listedFiles.indexOf('content/toolbar/ui/toolbar_ui.js')
+        );
+        expect(translationTargetStoreIndex).toBeLessThan(
+            listedFiles.indexOf('content/toolbar/ui/toolbar_ui.js')
         );
         expect(inputManagerIndex).toBeLessThan(
             listedFiles.indexOf('content/toolbar/controller.js')

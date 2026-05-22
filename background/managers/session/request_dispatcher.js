@@ -89,7 +89,7 @@ function isOpenAIOfficialBaseUrl(baseUrl) {
     try {
         const url = new URL(baseUrl);
         return url.hostname === 'api.openai.com';
-    } catch (_) {
+    } catch {
         return false;
     }
 }

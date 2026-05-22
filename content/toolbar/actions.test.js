@@ -84,15 +84,12 @@ describe('ToolbarActions', () => {
         };
         installToolbarStrings();
         window.GeminiWebModels = {
-            resolveImagePromptModel: ({ provider, mode, model }) =>
-                provider === 'web' && mode === 'remove_bg'
-                    ? 'gemini-3-pro-image-preview-11-2025'
-                    : model,
+            resolveImagePromptModel: ({ model }) => model,
         };
         await installToolbarActions();
     });
 
-    it('keeps Web image-generation retries on the resolved image model', async () => {
+    it('keeps Web image-generation retries on the selected model', async () => {
         const ui = {
             provider: 'web',
             showAskWindow: vi.fn(async () => {}),
@@ -114,7 +111,7 @@ describe('ToolbarActions', () => {
             expect.objectContaining({
                 action: 'QUICK_ASK_IMAGE',
                 imageMode: 'remove_bg',
-                model: 'gemini-3-pro-image-preview-11-2025',
+                model: 'gemini-3-pro',
             })
         );
         chrome.runtime.sendMessage.mockClear();
@@ -126,7 +123,7 @@ describe('ToolbarActions', () => {
             expect.objectContaining({
                 action: 'QUICK_ASK_IMAGE',
                 imageMode: 'remove_bg',
-                model: 'gemini-3-pro-image-preview-11-2025',
+                model: 'gemini-3-pro',
             })
         );
     });

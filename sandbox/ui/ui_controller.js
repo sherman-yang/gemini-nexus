@@ -76,10 +76,10 @@ export class UIController {
         const options = createModelOptions(settings);
 
         options.forEach((option) => {
-            const opt = document.createElement('option');
-            opt.value = option.value;
-            opt.textContent = option.label;
-            this.modelSelect.appendChild(opt);
+            const optionElement = document.createElement('option');
+            optionElement.value = option.value;
+            optionElement.textContent = option.label;
+            this.modelSelect.appendChild(optionElement);
         });
 
         // Restore selection if valid, else default

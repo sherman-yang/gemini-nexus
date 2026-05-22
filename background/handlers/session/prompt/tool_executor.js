@@ -204,7 +204,7 @@ export class ToolExecutor {
                 null,
                 2
             );
-        } catch (_) {
+        } catch {
             return call.name;
         }
     }

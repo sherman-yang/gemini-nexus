@@ -1,24 +1,18 @@
-import { sendToBackground } from '../../shared/messaging/index.js';
-import { t } from '../core/i18n.js';
-import { resizeSelectToSelectedOption } from '../ui/model_select_width.js';
+import { bindInputEvents } from './input_events.js';
+import { bindToolButtonEvents } from './tool_button_events.js';
 
-export function getToolsPageScrollDistance(toolsRow) {
-    return Math.max(160, toolsRow.clientWidth - 24);
-}
+export { getToolsPageScrollDistance } from './tool_button_events.js';
 
 export function bindAppEvents(app, ui, setResizeRef) {
-    // New Chat Buttons
     document
         .getElementById('new-chat-header-btn')
         .addEventListener('click', () => app.handleNewChat());
 
-    // Tab Switcher Button
     const tabSwitcherBtn = document.getElementById('tab-switcher-btn');
     if (tabSwitcherBtn) {
         tabSwitcherBtn.addEventListener('click', () => app.handleTabSwitcher());
     }
 
-    // Open Full Page Button
     const openFullPageBtn = document.getElementById('open-full-page-btn');
     if (openFullPageBtn) {
         openFullPageBtn.addEventListener('click', () => {
@@ -33,158 +27,6 @@ export function bindAppEvents(app, ui, setResizeRef) {
         });
     }
 
-    // Tools Row Navigation
-    const toolsRow = document.getElementById('tools-row');
-    const scrollLeftBtn = document.getElementById('tools-scroll-left');
-    const scrollRightBtn = document.getElementById('tools-scroll-right');
-
-    if (toolsRow && scrollLeftBtn && scrollRightBtn) {
-        const updateToolsScrollState = () => {
-            const maxScrollLeft = Math.max(0, toolsRow.scrollWidth - toolsRow.clientWidth);
-            const hasLeft = toolsRow.scrollLeft > 1;
-            const hasRight = toolsRow.scrollLeft < maxScrollLeft - 1;
-
-            toolsRow.parentElement.classList.toggle('has-overflow-left', hasLeft);
-            toolsRow.parentElement.classList.toggle('has-overflow-right', hasRight);
-            scrollLeftBtn.disabled = !hasLeft;
-            scrollRightBtn.disabled = !hasRight;
-        };
-
-        scrollLeftBtn.addEventListener('click', () => {
-            toolsRow.scrollBy({ left: -getToolsPageScrollDistance(toolsRow), behavior: 'smooth' });
-        });
-        scrollRightBtn.addEventListener('click', () => {
-            toolsRow.scrollBy({ left: getToolsPageScrollDistance(toolsRow), behavior: 'smooth' });
-        });
-        toolsRow.addEventListener('scroll', updateToolsScrollState, { passive: true });
-        window.addEventListener('resize', updateToolsScrollState);
-        requestAnimationFrame(updateToolsScrollState);
-        setTimeout(updateToolsScrollState, 300);
-    }
-
-    // Tools
-
-    // Browser Control (Functional Toggle)
-    const browserControlBtn = document.getElementById('browser-control-btn');
-    if (browserControlBtn) {
-        browserControlBtn.addEventListener('click', () => {
-            app.toggleBrowserControl();
-            if (ui.inputFn) ui.inputFn.focus();
-        });
-    }
-
-    document.getElementById('quote-btn').addEventListener('click', () => {
-        sendToBackground({ action: 'GET_ACTIVE_SELECTION' });
-        if (ui.inputFn) ui.inputFn.focus();
-    });
-
-    document.getElementById('ocr-btn').addEventListener('click', () => {
-        app.setCaptureMode('ocr');
-        sendToBackground({ action: 'INITIATE_CAPTURE', mode: 'ocr', source: 'sidepanel' });
-        ui.updateStatus(t('selectOcr'));
-    });
-
-    document.getElementById('screenshot-translate-btn').addEventListener('click', () => {
-        app.setCaptureMode('screenshot_translate');
-        sendToBackground({
-            action: 'INITIATE_CAPTURE',
-            mode: 'screenshot_translate',
-            source: 'sidepanel',
-        });
-        ui.updateStatus(t('selectTranslate'));
-    });
-
-    document.getElementById('screen-capture-btn').addEventListener('click', () => {
-        app.setCaptureMode('screen_capture');
-        window.parent.postMessage({ action: 'REQUEST_SCREEN_CAPTURE' }, '*');
-        ui.updateStatus(t('selectScreenCapture'));
-    });
-
-    document.getElementById('snip-btn').addEventListener('click', () => {
-        app.setCaptureMode('snip');
-        sendToBackground({ action: 'INITIATE_CAPTURE', mode: 'snip', source: 'sidepanel' });
-        ui.updateStatus(t('selectSnip'));
-    });
-
-    // Page Context Toggle
-    const contextBtn = document.getElementById('page-context-btn');
-    if (contextBtn) {
-        contextBtn.addEventListener('click', () => {
-            app.togglePageContext();
-            if (ui.inputFn) ui.inputFn.focus();
-        });
-    }
-
-    // Model Selector
-    const modelSelect = document.getElementById('model-select');
-
-    // Auto-resize Logic
-    let resizeModelSelectFrame = null;
-    const resizeModelSelect = () => {
-        if (resizeModelSelectFrame !== null) return;
-
-        resizeModelSelectFrame = window.requestAnimationFrame(() => {
-            resizeModelSelectFrame = null;
-
-            if (ui.resizeModelSelect) {
-                ui.resizeModelSelect();
-                return;
-            }
-
-            resizeSelectToSelectedOption(modelSelect);
-        });
-    };
-
-    if (setResizeRef) setResizeRef(resizeModelSelect); // Expose for message handler
-
-    if (modelSelect) {
-        modelSelect.addEventListener('change', (changeEvent) => {
-            app.handleModelChange(changeEvent.target.value);
-            resizeModelSelect();
-        });
-        // Call initial resize after a short delay to ensure fonts/styles loaded
-        setTimeout(resizeModelSelect, 50);
-    }
-
-    // Input Key Handling
-    const inputFn = document.getElementById('prompt');
-    const sendBtn = document.getElementById('send');
-
-    if (inputFn && sendBtn) {
-        inputFn.addEventListener('keydown', (keyEvent) => {
-            // Tab Cycle Models
-            if (keyEvent.key === 'Tab') {
-                keyEvent.preventDefault();
-                if (modelSelect) {
-                    const direction = keyEvent.shiftKey ? -1 : 1;
-                    const newIndex =
-                        (modelSelect.selectedIndex + direction + modelSelect.length) %
-                        modelSelect.length;
-                    modelSelect.selectedIndex = newIndex;
-                    modelSelect.dispatchEvent(new Event('change'));
-                }
-                return;
-            }
-
-            if (keyEvent.key === 'Enter' && !keyEvent.shiftKey && !keyEvent.isComposing) {
-                keyEvent.preventDefault();
-                sendBtn.click();
-            }
-        });
-
-        sendBtn.addEventListener('click', () => {
-            if (app.isGenerating) {
-                app.handleCancel();
-            } else {
-                app.handleSendMessage();
-            }
-        });
-    }
-
-    document.addEventListener('keydown', (keyEvent) => {
-        if ((keyEvent.ctrlKey || keyEvent.metaKey) && keyEvent.key.toLowerCase() === 'p') {
-            keyEvent.preventDefault();
-            if (inputFn) inputFn.focus();
-        }
-    });
+    bindToolButtonEvents(app, ui);
+    bindInputEvents(app, ui, setResizeRef);
 }

@@ -49,7 +49,7 @@ class ToolbarActions {
      * @param {string} mode - 'ocr' | 'translate' | 'snip' | 'analyze' | 'upscale' | 'expand' | 'remove_text' | 'remove_bg' | 'remove_watermark'
      * @param {string} model - Model name
      */
-    async handleImagePrompt(imageDataUrl, rect, mode, model = 'gemini-3-flash') {
+    async handleImagePrompt(imageDataUrl, rect, mode, model = '8c46e95b1a07cecc') {
         const strings = this.t;
         let title, prompt, loadingMessage, inputValue;
 
@@ -161,7 +161,7 @@ class ToolbarActions {
         actionType,
         selection,
         rect,
-        model = 'gemini-3-flash',
+        model = '8c46e95b1a07cecc',
         mousePoint = null
     ) {
         const strings = this.t;
@@ -217,7 +217,7 @@ class ToolbarActions {
         tool,
         selection,
         rect,
-        model = 'gemini-3-flash',
+        model = '8c46e95b1a07cecc',
         mousePoint = null
     ) {
         const title = String(tool?.name || '').trim() || 'Custom';
@@ -240,7 +240,7 @@ class ToolbarActions {
         chrome.runtime.sendMessage(message);
     }
 
-    handleSubmitAsk(question, context, sessionId = null, model = 'gemini-3-flash') {
+    handleSubmitAsk(question, context, sessionId = null, model = '8c46e95b1a07cecc') {
         this.ui.showLoading();
         this.lastTranslationRequest = null;
 

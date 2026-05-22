@@ -51,7 +51,6 @@ export class ConnectionSection {
             providerSelect: get(DOM_IDS.PROVIDER_SELECT),
             apiKeyContainer: get(DOM_IDS.API_KEY_CONTAINER),
 
-            // Official Fields
             officialFields: get(DOM_IDS.OFFICIAL_FIELDS),
             officialBaseUrl: get(DOM_IDS.OFFICIAL_BASE_URL),
             apiKeyInput: get(DOM_IDS.OFFICIAL_API_KEY),
@@ -59,7 +58,6 @@ export class ConnectionSection {
             thinkingLevelSelect: get(DOM_IDS.OFFICIAL_THINKING_LEVEL),
             officialWebSearchEnabled: get(DOM_IDS.OFFICIAL_WEB_SEARCH),
 
-            // OpenAI Fields
             openaiFields: get(DOM_IDS.OPENAI_FIELDS),
             openaiBaseUrl: get(DOM_IDS.OPENAI_BASE_URL),
             openaiApiKey: get(DOM_IDS.OPENAI_API_KEY),
@@ -68,7 +66,6 @@ export class ConnectionSection {
             openaiUseResponsesApi: get(DOM_IDS.OPENAI_USE_RESPONSES_API),
             openaiWebSearch: get(DOM_IDS.OPENAI_WEB_SEARCH),
 
-            // MCP Fields
             mcpEnabled: get(DOM_IDS.MCP_ENABLED),
             mcpFields: get(DOM_IDS.MCP_FIELDS),
             mcpServerSelect: get(DOM_IDS.MCP_SERVER_SELECT),
@@ -112,14 +109,12 @@ export class ConnectionSection {
             mcpEnabled,
         } = this.elements;
 
-        // Provider
         if (providerSelect) {
-            const providerVal = data?.provider || DEFAULT_PROVIDER;
-            providerSelect.value = providerVal;
-            this.updateVisibility(providerVal);
+            const providerValue = data?.provider || DEFAULT_PROVIDER;
+            providerSelect.value = providerValue;
+            this.updateVisibility(providerValue);
         }
 
-        // Official
         if (officialBaseUrl)
             officialBaseUrl.value = data?.officialBaseUrl || DEFAULT_OFFICIAL_BASE_URL;
         if (apiKeyInput) apiKeyInput.value = data?.apiKey || '';
@@ -129,7 +124,6 @@ export class ConnectionSection {
         if (officialWebSearchEnabled)
             officialWebSearchEnabled.checked = data?.officialWebSearch === true;
 
-        // OpenAI
         if (openaiBaseUrl) openaiBaseUrl.value = data?.openaiBaseUrl || '';
         if (openaiApiKey) openaiApiKey.value = data?.openaiApiKey || '';
         if (openaiModel) openaiModel.value = data?.openaiModel || '';
@@ -139,7 +133,6 @@ export class ConnectionSection {
         if (openaiUseResponsesApi) openaiUseResponsesApi.checked = openaiSettings.useResponsesApi;
         if (openaiWebSearch) openaiWebSearch.checked = openaiSettings.webSearch;
 
-        // MCP
         if (mcpEnabled) {
             mcpEnabled.checked = data?.mcpEnabled === true;
             this.updateMcpVisibility(mcpEnabled.checked);
@@ -207,7 +200,6 @@ export class ConnectionSection {
 
         return {
             provider: providerSelect ? providerSelect.value : DEFAULT_PROVIDER,
-            // Official
             officialBaseUrl: officialBaseUrl
                 ? officialBaseUrl.value.trim()
                 : DEFAULT_OFFICIAL_BASE_URL,
@@ -217,7 +209,6 @@ export class ConnectionSection {
             officialWebSearch: officialWebSearchEnabled
                 ? officialWebSearchEnabled.checked === true
                 : false,
-            // OpenAI
             openaiBaseUrl: openaiBaseUrl ? openaiBaseUrl.value.trim() : '',
             openaiApiKey: openaiApiKey ? openaiApiKey.value.trim() : '',
             openaiModel: openaiModel ? openaiModel.value.trim() : '',
@@ -229,7 +220,6 @@ export class ConnectionSection {
                 : false,
             openaiWebSearch: openaiWebSearch ? openaiWebSearch.checked === true : false,
 
-            // MCP - Multi-server mode: all enabled servers will be used
             mcpEnabled: mcpEnabled ? mcpEnabled.checked === true : false,
             mcpServers: servers,
             // Keep mcpActiveServerId for backward compatibility but it's no longer required
@@ -351,15 +341,14 @@ export class ConnectionSection {
 
         mcpServerSelect.innerHTML = '';
         for (const server of this.mcpServers) {
-            const opt = document.createElement('option');
-            opt.value = server.id;
+            const optionElement = document.createElement('option');
+            optionElement.value = server.id;
 
             const name = (server.name || '').trim();
             const label = name || server.url || t('defaultMcpServer');
-            // Show enabled status with checkmark or cross
             const status = server.enabled === false ? '✗' : '✓';
-            opt.textContent = `${status} ${label}`;
-            mcpServerSelect.appendChild(opt);
+            optionElement.textContent = `${status} ${label}`;
+            mcpServerSelect.appendChild(optionElement);
         }
 
         if (active) mcpServerSelect.value = active.id;

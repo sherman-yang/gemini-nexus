@@ -118,10 +118,12 @@ describe('TabSelectorController browser control bar', () => {
             2
         );
 
-        const item = document.querySelector('[data-tab-id="2"]');
-        expect(item.querySelector('.browser-tab-favicon')).toBeTruthy();
-        expect(item.querySelector('.tab-lock-only-btn').classList.contains('is-locked')).toBe(true);
-        expect(item.querySelectorAll('[style]')).toHaveLength(0);
+        const tabRow = document.querySelector('[data-tab-id="2"]');
+        expect(tabRow.querySelector('.browser-tab-favicon')).toBeTruthy();
+        expect(tabRow.querySelector('.tab-lock-only-btn').classList.contains('is-locked')).toBe(
+            true
+        );
+        expect(tabRow.querySelectorAll('[style]')).toHaveLength(0);
     });
 
     it('resets the trigger button with the shared tab stack icon', () => {

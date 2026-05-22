@@ -115,8 +115,8 @@ export function parseGeminiLine(line) {
                     }
 
                     if (Array.isArray(node)) {
-                        for (const item of node) {
-                            traverse(item, depth + 1);
+                        for (const childNode of node) {
+                            traverse(childNode, depth + 1);
                         }
                         return;
                     }
@@ -162,8 +162,8 @@ export function parseGeminiLine(line) {
 
         // Iterate through all items in the envelope to find the one containing the chat payload
         // This handles cases where the 'wrb.fr' ID changes, moves, or the item index shifts
-        for (const item of rootArray) {
-            const result = extractPayload(item);
+        for (const envelopeEntry of rootArray) {
+            const result = extractPayload(envelopeEntry);
             if (result) {
                 return {
                     text: result.text,

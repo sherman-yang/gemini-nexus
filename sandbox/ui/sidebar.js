@@ -9,12 +9,10 @@ export class SidebarController {
         this.toggleBtn = elements.historyToggleBtn;
         this.closeBtn = elements.closeSidebarBtn;
 
-        // Search Elements
         this.searchInput = document.getElementById('history-search');
 
         this.callbacks = callbacks || {};
 
-        // State for search
         this.allSessions = [];
         this.currentSessionId = null;
         this.itemCallbacks = null;
@@ -147,13 +145,16 @@ export class SidebarController {
             return;
         }
 
-        sessions.forEach((s) => {
+        sessions.forEach((session) => {
             const isGeneratingSession =
-                this.renderState.isGenerating && this.renderState.generatingSessionId === s.id;
-            const item = document.createElement('div');
-            item.className = `history-item ${s.id === this.currentSessionId ? 'active' : ''}`;
-            item.onclick = () => {
-                this.itemCallbacks.onSwitch(s.id);
+                this.renderState.isGenerating &&
+                this.renderState.generatingSessionId === session.id;
+            const sessionRow = document.createElement('div');
+            sessionRow.className = `history-item ${
+                session.id === this.currentSessionId ? 'active' : ''
+            }`;
+            sessionRow.onclick = () => {
+                this.itemCallbacks.onSwitch(session.id);
                 // On mobile or small screens, maybe auto-close sidebar?
                 // Keeping current behavior: explicit close required or select closes
                 if (window.innerWidth < 600) {
@@ -163,7 +164,7 @@ export class SidebarController {
 
             const titleSpan = document.createElement('span');
             titleSpan.className = 'history-title';
-            titleSpan.textContent = s.title;
+            titleSpan.textContent = session.title;
 
             const spinner = document.createElement('span');
             spinner.className = 'history-generating-spinner';
@@ -177,16 +178,16 @@ export class SidebarController {
             deleteButton.onclick = (clickEvent) => {
                 clickEvent.stopPropagation();
                 if (confirm(t('deleteChatConfirm'))) {
-                    this.itemCallbacks.onDelete(s.id);
+                    this.itemCallbacks.onDelete(session.id);
                 }
             };
 
-            item.appendChild(titleSpan);
+            sessionRow.appendChild(titleSpan);
             if (isGeneratingSession) {
-                item.appendChild(spinner);
+                sessionRow.appendChild(spinner);
             }
-            item.appendChild(deleteButton);
-            fragment.appendChild(item);
+            sessionRow.appendChild(deleteButton);
+            fragment.appendChild(sessionRow);
         });
 
         this.listEl.replaceChildren(fragment);

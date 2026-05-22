@@ -24,10 +24,10 @@ describe('settings layout styles', () => {
     });
 
     it('lets settings form controls override compact shortcut widths', async () => {
-        const controlsCss = await readCss('./settings_controls.css');
+        const formsCss = await readCss('./settings_forms.css');
 
-        expect(controlsCss).toMatch(/\.settings-input\.settings-full-input\s*{[^}]*width:\s*100%/s);
-        expect(controlsCss).toMatch(/\.settings-input\.settings-select\s*{[^}]*width:\s*100%/s);
+        expect(formsCss).toMatch(/\.settings-input\.settings-full-input\s*{[^}]*width:\s*100%/s);
+        expect(formsCss).toMatch(/\.settings-input\.settings-select\s*{[^}]*width:\s*100%/s);
     });
 
     it('keeps wide-page tools visible and keeps the full-page launcher available in side panels', async () => {

@@ -37,14 +37,18 @@ import {
     DEFAULT_THINKING_LEVEL,
 } from '../../../shared/config/constants.js';
 import { createDefaultMcpServer } from '../../../shared/settings/connection.js';
-import { normalizeOpenAIWebSearchSettings } from '../../../shared/settings/openai.js';
 import { normalizeCustomSelectionTools } from '../../../shared/settings/selection_tools.js';
+import {
+    buildConnectionSettingsForSave,
+    buildContextSettingsForSave,
+    buildGeneralSettingsForSave,
+    normalizeRecentTurns,
+} from './settings_save.js';
 
 export class SettingsController {
     constructor(callbacks) {
         this.callbacks = callbacks || {};
 
-        // State
         this.defaultShortcuts = { ...DEFAULT_SHORTCUTS };
         this.shortcuts = { ...this.defaultShortcuts };
 
@@ -60,7 +64,6 @@ export class SettingsController {
             recentTurns: DEFAULT_CONTEXT_RECENT_TURNS,
         };
 
-        // Connection State
         this.connectionData = {
             provider: DEFAULT_PROVIDER,
             useOfficialApi: false, // Legacy support
@@ -76,7 +79,6 @@ export class SettingsController {
             openaiThinkingLevel: DEFAULT_THINKING_LEVEL,
             openaiUseResponsesApi: false,
             openaiWebSearch: false,
-            // MCP (External Tools)
             mcpEnabled: false,
             mcpTransport: DEFAULT_MCP_TRANSPORT,
             mcpServerUrl: DEFAULT_MCP_HTTP_URL,
@@ -84,7 +86,6 @@ export class SettingsController {
             mcpActiveServerId: null,
         };
 
-        // Initialize View
         this.view = new SettingsView({
             onOpen: () => this.handleOpen(),
             onSave: (data) => this.saveSettings(data),
@@ -112,7 +113,6 @@ export class SettingsController {
             onDownloadLogs: () => this.downloadLogs(),
         });
 
-        // Listen for log data
         window.addEventListener('message', (messageEvent) => {
             const { action, payload } = messageEvent.data || {};
             if (action === 'BACKGROUND_MESSAGE' && payload?.logs) {
@@ -129,17 +129,7 @@ export class SettingsController {
         this.view.close();
     }
 
-    normalizeAccountIndices(value) {
-        const cleaned = String(value || '')
-            .split(',')
-            .map((part) => part.trim())
-            .filter((part) => /^\d+$/.test(part))
-            .join(',');
-        return cleaned || '0';
-    }
-
     handleOpen() {
-        // Sync state to view
         this.view.setShortcuts(this.shortcuts);
         this.view.setLanguageValue(getLanguagePreference());
         this.view.setToggles(this.textSelectionEnabled, this.imageToolsEnabled);
@@ -151,7 +141,6 @@ export class SettingsController {
         this.view.setContextSettings(this.contextSettings);
         this.view.setConnectionSettings(this.connectionData);
 
-        // Refresh from storage
         requestTextSelectionFromStorage();
         requestTextSelectionBlacklistFromStorage();
         requestCustomSelectionToolsFromStorage();
@@ -167,68 +156,38 @@ export class SettingsController {
         const previousProvider =
             this.connectionData.provider ||
             (this.connectionData.useOfficialApi ? 'official' : 'web');
+        const generalSettings = buildGeneralSettingsForSave(data);
 
-        // Shortcuts
-        this.shortcuts = data.shortcuts;
+        this.shortcuts = generalSettings.shortcuts;
         saveShortcutsToStorage(this.shortcuts);
 
-        // General Toggles
-        this.textSelectionEnabled = data.textSelection;
+        this.textSelectionEnabled = generalSettings.textSelectionEnabled;
         saveTextSelectionToStorage(this.textSelectionEnabled);
 
-        this.textSelectionBlacklist = data.textSelectionBlacklist || '';
+        this.textSelectionBlacklist = generalSettings.textSelectionBlacklist;
         saveTextSelectionBlacklistToStorage(this.textSelectionBlacklist);
 
-        this.customSelectionTools = normalizeCustomSelectionTools(data.customSelectionTools);
+        this.customSelectionTools = generalSettings.customSelectionTools;
         this.view.setCustomSelectionTools(this.customSelectionTools);
         saveCustomSelectionToolsToStorage(this.customSelectionTools);
 
-        this.imageToolsEnabled = data.imageTools;
+        this.imageToolsEnabled = generalSettings.imageToolsEnabled;
         saveImageToolsToStorage(this.imageToolsEnabled);
 
-        // Accounts
-        const accountIndices = this.normalizeAccountIndices(data.accountIndices);
-        this.accountIndices = accountIndices;
-        this.view.setAccountIndices(accountIndices);
-        saveAccountIndicesToStorage(accountIndices);
+        this.accountIndices = generalSettings.accountIndices;
+        this.view.setAccountIndices(this.accountIndices);
+        saveAccountIndicesToStorage(this.accountIndices);
 
-        this.sidebarBehavior = data.sidebarBehavior || 'auto';
+        this.sidebarBehavior = generalSettings.sidebarBehavior;
         saveSidebarBehaviorToStorage(this.sidebarBehavior);
 
-        this.sidePanelScope = data.sidePanelScope || DEFAULT_SIDE_PANEL_SCOPE;
+        this.sidePanelScope = generalSettings.sidePanelScope;
         saveSidePanelScopeToStorage(this.sidePanelScope);
 
-        this.contextSettings = {
-            mode: data.contextMode === 'recent' ? 'recent' : DEFAULT_CONTEXT_MODE,
-            recentTurns: this.normalizeRecentTurns(data.contextRecentTurns),
-        };
+        this.contextSettings = buildContextSettingsForSave(data);
         saveContextSettingsToStorage(this.contextSettings);
 
-        const openaiSettings = normalizeOpenAIWebSearchSettings(data.connection);
-
-        // Connection
-        this.connectionData = {
-            provider: data.connection.provider,
-            officialBaseUrl: data.connection.officialBaseUrl,
-            apiKey: data.connection.apiKey,
-            officialModel: data.connection.officialModel,
-            thinkingLevel: data.connection.thinkingLevel,
-            officialWebSearch: data.connection.officialWebSearch === true,
-            openaiBaseUrl: data.connection.openaiBaseUrl,
-            openaiApiKey: data.connection.openaiApiKey,
-            openaiModel: data.connection.openaiModel,
-            openaiSelectedModel: this.connectionData.openaiSelectedModel || '',
-            openaiThinkingLevel: data.connection.openaiThinkingLevel || DEFAULT_THINKING_LEVEL,
-            openaiUseResponsesApi: openaiSettings.useResponsesApi,
-            openaiWebSearch: openaiSettings.webSearch,
-            // MCP
-            mcpEnabled: data.connection.mcpEnabled === true,
-            mcpTransport: data.connection.mcpTransport || DEFAULT_MCP_TRANSPORT,
-            mcpServerUrl: data.connection.mcpServerUrl || '',
-            mcpServers: Array.isArray(data.connection.mcpServers) ? data.connection.mcpServers : [],
-            mcpActiveServerId: data.connection.mcpActiveServerId || null,
-        };
-
+        this.connectionData = buildConnectionSettingsForSave(data.connection, this.connectionData);
         saveConnectionSettingsToStorage(this.connectionData);
 
         // Notify app of critical setting changes
@@ -344,15 +303,9 @@ export class SettingsController {
     updateContextSettings(settings) {
         this.contextSettings = {
             mode: settings?.mode === 'recent' ? 'recent' : DEFAULT_CONTEXT_MODE,
-            recentTurns: this.normalizeRecentTurns(settings?.recentTurns),
+            recentTurns: normalizeRecentTurns(settings?.recentTurns),
         };
         this.view.setContextSettings(this.contextSettings);
-    }
-
-    normalizeRecentTurns(value) {
-        const parsed = Number.parseInt(value, 10);
-        if (!Number.isFinite(parsed)) return DEFAULT_CONTEXT_RECENT_TURNS;
-        return Math.min(50, Math.max(1, parsed));
     }
 
     updateMcpTestResult(result) {

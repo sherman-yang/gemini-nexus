@@ -22,7 +22,7 @@ export async function readSseJson(response, onEvent) {
             let data;
             try {
                 data = JSON.parse(dataStr);
-            } catch (_) {
+            } catch {
                 // Ignore malformed or incomplete stream events.
                 continue;
             }

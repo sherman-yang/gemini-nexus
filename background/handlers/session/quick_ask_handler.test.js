@@ -131,7 +131,7 @@ describe('QuickAskHandler', () => {
             {
                 text: 'remove background',
                 url: 'data:image/png;base64,AAAA',
-                model: 'gemini-3-pro-image-preview-11-2025',
+                model: 'gemini-3-pro',
                 imageMode: 'remove_bg',
             },
             { tab: { id: 7 } }

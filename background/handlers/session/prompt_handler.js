@@ -1,19 +1,17 @@
-import {
-    appendAiMessage,
-    appendAiMessageIfDisplayable,
-    appendRawMessages,
-    appendUserMessage,
-    replaceSessionSnapshot,
-} from '../../managers/history_manager.js';
+import { appendAiMessage, replaceSessionSnapshot } from '../../managers/history_manager.js';
 import { PromptBuilder } from './prompt/builder.js';
 import { ToolExecutor } from './prompt/tool_executor.js';
 import {
-    createOfficialFunctionResponseMessage,
-    createOfficialFunctionResponseParts,
-    createOfficialModelMessage,
-    hasNativeFunctionCalls,
-} from './official_function_response.js';
-import { parseToolCommand, splitToolCallFromText } from '../../../shared/text/tool_call_text.js';
+    buildToolContinuationPrompt,
+    detectPromptLanguage,
+    executePendingToolResult,
+    getToolResultsFiles,
+    injectBrowserControlSnapshot,
+    persistToolOutputMessages,
+    updateBrowserControlFunctionResponses,
+} from './prompt/tool_loop.js';
+
+export { hasInlinePageSnapshot } from './prompt/tool_loop.js';
 
 // Spaces out looped requests to avoid rate-limit bursts.
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -30,104 +28,12 @@ async function sendRuntimeMessage(message) {
     } catch {}
 }
 
-function createIntermediateAiResult(result) {
-    const split = splitToolCallFromText(result?.text || '');
-
-    return {
-        ...result,
-        text: split.hasToolCall ? split.displayText : result?.text || '',
-        thoughts: result?.thoughts || null,
-        thoughtsDurationSeconds: result?.thoughtsDurationSeconds,
-        sources: result?.sources || null,
-        images: result?.images,
-        thoughtSignature: result?.thoughtSignature,
-        context: result?.context,
-    };
-}
-
-function createCopySuppressedIntermediateAiResult(result) {
-    const intermediate = createIntermediateAiResult(result);
-    return {
-        ...intermediate,
-        suppressCopy: true,
-    };
-}
-
-function detectPromptLanguage(text) {
-    const value = typeof text === 'string' ? text : '';
-    const zhMatches = value.match(/[\u3400-\u9fff]/g) || [];
-    if (zhMatches.length >= 2) return 'zh';
-    return 'default';
-}
-
-function buildLanguageContinuationInstruction(language) {
-    if (language === 'zh') {
-        return '继续时必须使用简体中文回答，保持与用户原始请求一致的语言。';
-    }
-    return 'Continue in the same language as the original user request.';
-}
-
-function buildToolContinuationPrompt(toolName, output, language) {
-    const languageInstruction = buildLanguageContinuationInstruction(language);
-    if (language === 'zh') {
-        return `工具 ${toolName} 的输出：\n\`\`\`\n${output}\n\`\`\`\n\n${languageInstruction}\n\n继续下一步或确认任务已完成。`;
-    }
-
-    return `[Tool Output from ${toolName}]:\n\`\`\`\n${output}\n\`\`\`\n\n${languageInstruction}\n\n(Proceed with the next step or confirm completion)`;
-}
-
-export function hasInlinePageSnapshot(output) {
-    return typeof output === 'string' && output.includes('## Latest page snapshot');
-}
-
 function getBrowserControlTaskTitle(text) {
     const normalized = String(text || '')
         .replace(/\s+/g, ' ')
         .trim();
     if (!normalized) return 'Browser control';
     return normalized.length > 28 ? `${normalized.slice(0, 27)}...` : normalized;
-}
-
-function getToolResultsFiles(toolResults) {
-    return toolResults.flatMap((result) => (Array.isArray(result.files) ? result.files : []));
-}
-
-function getPrimaryToolResult(toolResults) {
-    return Array.isArray(toolResults) && toolResults.length > 0 ? toolResults[0] : null;
-}
-
-function getToolResultOutputForDisplay(toolResult) {
-    return typeof toolResult?.output === 'string'
-        ? toolResult.output
-        : String(toolResult?.output ?? '');
-}
-
-function buildTextToolResult(toolResult, outputForModel) {
-    if (!toolResult) return null;
-    return {
-        ...toolResult,
-        outputForModel,
-        officialResponseParts: null,
-        officialResponseBatchId: null,
-        results: [toolResult],
-    };
-}
-
-function buildNativeToolResult(toolResults, responseBatchId) {
-    const primary = getPrimaryToolResult(toolResults);
-    if (!primary) return null;
-
-    return {
-        ...primary,
-        outputForModel: getToolResultOutputForDisplay(primary),
-        officialResponseParts: createOfficialFunctionResponseParts(toolResults),
-        officialResponseBatchId: responseBatchId,
-        results: toolResults,
-    };
-}
-
-function createFunctionResponseBatchId(sessionId, loopCount) {
-    return ['official-tools', sessionId || 'no-session', Date.now(), loopCount].join('|');
 }
 
 export class PromptHandler {
@@ -257,7 +163,7 @@ export class PromptHandler {
                             ...request,
                             text: currentPromptText,
                             historyPromptText: currentHistoryText,
-                            systemInstruction: systemInstruction, // Pass system instruction
+                            systemInstruction,
                             files: currentFiles,
                         },
                         onUpdate
@@ -271,43 +177,13 @@ export class PromptHandler {
                         break;
                     }
 
-                    let toolResult = null;
-                    const toolsEnabled = request.enableBrowserControl || request.enableMcpTools;
-                    const pendingNativeCalls = toolsEnabled && hasNativeFunctionCalls(result);
-                    const pendingToolCommand =
-                        toolsEnabled && !pendingNativeCalls
-                            ? parseToolCommand(result.text || '')
-                            : null;
-                    if (pendingToolCommand && request.sessionId) {
-                        await appendAiMessageIfDisplayable(
-                            request.sessionId,
-                            createCopySuppressedIntermediateAiResult(result)
-                        );
-                    }
-
-                    if (toolsEnabled) {
-                        if (pendingNativeCalls) {
-                            const batchId = createFunctionResponseBatchId(
-                                request.sessionId,
-                                loopCount + 1
-                            );
-                            const toolResults = await this.toolExecutor.executeFunctionCalls(
-                                result.functionCalls,
-                                request
-                            );
-                            toolResult = buildNativeToolResult(toolResults, batchId);
-                        } else {
-                            const textToolResult = await this.toolExecutor.executeIfPresent(
-                                result.text,
-                                request,
-                                onUpdate
-                            );
-                            toolResult = buildTextToolResult(
-                                textToolResult,
-                                textToolResult?.output || ''
-                            );
-                        }
-                    }
+                    const { toolResult, pendingNativeCalls } = await executePendingToolResult({
+                        result,
+                        request,
+                        loopCount,
+                        toolExecutor: this.toolExecutor,
+                        onUpdate,
+                    });
 
                     if (this.isRunCancelled(run)) break;
 
@@ -319,62 +195,20 @@ export class PromptHandler {
                         );
                         currentFiles = allToolFiles; // Send new files if any, or clear previous files
 
-                        let outputForModel = toolResult.outputForModel;
-
-                        // Automatically inject the Accessibility Tree if the tool implies a state change.
-                        // We skip purely observational tools to save processing/tokens if they don't change state.
-                        const skipSnapshotTools = ['take_snapshot', 'list_pages'];
-
-                        if (
-                            toolResult.source === 'browser_control' &&
-                            request.enableBrowserControl &&
-                            this.controlManager &&
-                            !skipSnapshotTools.includes(toolResult.toolName) &&
-                            !hasInlinePageSnapshot(outputForModel)
-                        ) {
-                            try {
-                                const targetTabId = this.controlManager.getTargetTabId();
-                                let urlInfo = '';
-                                if (targetTabId) {
-                                    try {
-                                        const tab = await chrome.tabs.get(targetTabId);
-                                        urlInfo = `[Current URL]: ${tab.url}\n`;
-                                    } catch {}
-                                }
-
-                                const snapshot = await this.controlManager.getSnapshot();
-                                if (
-                                    snapshot &&
-                                    typeof snapshot === 'string' &&
-                                    !snapshot.startsWith('Error')
-                                ) {
-                                    outputForModel += `\n\n${urlInfo}[Updated Page Accessibility Tree]:\n\`\`\`text\n${snapshot}\n\`\`\`\n`;
-                                }
-                            } catch (error) {
-                                console.warn('Auto-snapshot injection failed:', error);
-                            }
-                        }
+                        const outputForModel = await injectBrowserControlSnapshot({
+                            toolResult,
+                            outputForModel: toolResult.outputForModel,
+                            request,
+                            controlManager: this.controlManager,
+                        });
 
                         const isOfficialFunctionResponse =
                             Array.isArray(toolResult.officialResponseParts) &&
                             toolResult.officialResponseParts.length > 0;
 
-                        if (isOfficialFunctionResponse && toolResult.source === 'browser_control') {
-                            toolResult.officialResponseParts = createOfficialFunctionResponseParts(
-                                (toolResult.results || [toolResult]).map((item) => {
-                                    if (
-                                        item?.source !== 'browser_control' ||
-                                        item.toolName !== toolResult.toolName
-                                    ) {
-                                        return item;
-                                    }
-                                    return {
-                                        ...item,
-                                        output: outputForModel,
-                                    };
-                                })
-                            );
-                        }
+                        const nextToolResult = isOfficialFunctionResponse
+                            ? updateBrowserControlFunctionResponses(toolResult, outputForModel)
+                            : toolResult;
 
                         // Format observation for the model. Official native function
                         // calls use functionResponse parts instead of synthetic text.
@@ -388,107 +222,23 @@ export class PromptHandler {
 
                         // Save "User" message (Tool Output) to history to keep context in sync
                         // NOTE: We do NOT save the massive auto-snapshot text to the user history to keep the UI clean.
-                        if (request.sessionId) {
-                            const toolResults = toolResult.results || [toolResult];
-                            const toolOutputMessages = [];
-                            const toolCallSplit = splitToolCallFromText(result.text || '');
-                            const textToolCallText =
-                                toolCallSplit.toolCallText || result.text || '';
-
-                            for (const [index, item] of toolResults.entries()) {
-                                const itemFiles = Array.isArray(item.files) ? item.files : [];
-                                const historyImages = itemFiles.length
-                                    ? itemFiles.map((f) => f.base64)
-                                    : null;
-                                const itemToolCallText = pendingNativeCalls
-                                    ? JSON.stringify(
-                                          { tool: item.toolName, args: item.args || {} },
-                                          null,
-                                          2
-                                      )
-                                    : textToolCallText;
-                                const step = loopCount;
-                                const callIndex = Number.isFinite(item.callIndex)
-                                    ? item.callIndex
-                                    : index + 1;
-                                const callCount = Number.isFinite(item.callCount)
-                                    ? item.callCount
-                                    : toolResults.length;
-                                const userMsg = `[Tool Output: ${item.toolName}]\n${item.output}\n\n[Proceeding to step ${step}]`;
-
-                                await sendRuntimeMessage({
-                                    action: 'TOOL_OUTPUT_MESSAGE',
-                                    sessionId: request.sessionId,
-                                    toolName: item.toolName,
-                                    text: item.output,
-                                    images: historyImages,
-                                    toolCallText: itemToolCallText,
-                                    status: item.status || 'completed',
-                                    step,
-                                    callIndex,
-                                    callCount,
-                                });
-
-                                toolOutputMessages.push({
-                                    role: 'user',
-                                    text: userMsg,
-                                    image: historyImages,
-                                    kind: 'tool-output',
-                                    toolName: item.toolName,
-                                    toolStatus: item.status || 'completed',
-                                    toolCallText: itemToolCallText,
-                                    toolStep: step,
-                                    toolCallIndex: callIndex,
-                                    toolCallCount: callCount,
-                                    officialFunctionResponseBatchId:
-                                        toolResult.officialResponseBatchId || null,
-                                });
-                            }
-
-                            if (isOfficialFunctionResponse) {
-                                const officialMessages = [];
-                                const officialModelMessage = createOfficialModelMessage(result);
-                                const officialResponseMessage =
-                                    createOfficialFunctionResponseMessage(toolResults);
-                                if (officialModelMessage)
-                                    officialMessages.push(officialModelMessage);
-                                if (officialResponseMessage) {
-                                    officialResponseMessage.officialFunctionResponseBatchId =
-                                        toolResult.officialResponseBatchId;
-                                    officialMessages.push(officialResponseMessage);
-                                }
-                                await appendRawMessages(request.sessionId, [
-                                    ...officialMessages,
-                                    ...toolOutputMessages,
-                                ]);
-                                currentHistoryText = '';
-                            } else {
-                                const primaryMessage = toolOutputMessages[0];
-                                if (primaryMessage) {
-                                    await appendUserMessage(
-                                        request.sessionId,
-                                        primaryMessage.text,
-                                        primaryMessage.image,
-                                        {
-                                            kind: 'tool-output',
-                                            toolName: primaryMessage.toolName,
-                                            toolStatus: primaryMessage.toolStatus,
-                                            toolCallText: primaryMessage.toolCallText,
-                                            toolStep: primaryMessage.toolStep,
-                                            toolCallIndex: primaryMessage.toolCallIndex,
-                                            toolCallCount: primaryMessage.toolCallCount,
-                                        }
-                                    );
-                                    currentHistoryText = primaryMessage.text;
-                                }
-                            }
+                        const persistedHistoryText = await persistToolOutputMessages({
+                            request,
+                            result,
+                            toolResult: nextToolResult,
+                            loopCount,
+                            pendingNativeCalls,
+                            sendRuntimeMessage,
+                        });
+                        if (persistedHistoryText !== null) {
+                            currentHistoryText = persistedHistoryText;
                         }
 
                         if (isOfficialFunctionResponse) {
                             currentFiles = [];
-                            request.officialUserParts = toolResult.officialResponseParts;
+                            request.officialUserParts = nextToolResult.officialResponseParts;
                             request.officialFunctionResponseBatchId =
-                                toolResult.officialResponseBatchId;
+                                nextToolResult.officialResponseBatchId;
                         } else {
                             request.officialUserParts = null;
                             request.officialFunctionResponseBatchId = null;

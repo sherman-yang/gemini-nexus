@@ -1,20 +1,10 @@
 (function () {
-    const DEFAULT_WEB_MODEL = 'gemini-3-flash';
-    const WEB_IMAGE_GENERATION_MODEL = 'gemini-3-pro-image-preview-11-2025';
-    const IMAGE_GENERATION_MODES = new Set([
-        'upscale',
-        'expand',
-        'remove_text',
-        'remove_bg',
-        'remove_watermark',
-    ]);
+    const DEFAULT_WEB_MODEL = '8c46e95b1a07cecc';
 
     const WEB_MODEL_OPTIONS = [
-        { value: 'gemini-3-flash', label: 'Fast' },
-        { value: 'gemini-3-flash-thinking', label: 'Thinking' },
-        { value: 'gemini-3-pro', label: '3.1 Pro' },
-        { value: 'gemini-3.1-flash-image-preview', label: 'Image Fast' },
-        { value: WEB_IMAGE_GENERATION_MODEL, label: 'Image Pro' },
+        { value: '8c46e95b1a07cecc', label: '3.1 Flash-Lite' },
+        { value: '56fdd199312815e2', label: '3.5 Flash' },
+        { value: 'e6fa609c3fa255c0', label: '3.1 Pro' },
     ];
 
     function createOptions() {
@@ -28,15 +18,11 @@
     }
 
     function resolveImagePromptModel({ provider = 'web', mode, model } = {}) {
-        if (provider === 'web' && IMAGE_GENERATION_MODES.has(mode)) {
-            return WEB_IMAGE_GENERATION_MODEL;
-        }
         return model || DEFAULT_WEB_MODEL;
     }
 
     window.GeminiWebModels = {
         DEFAULT_WEB_MODEL,
-        WEB_IMAGE_GENERATION_MODEL,
         createOptions,
         createOptionMarkup,
         resolveImagePromptModel,

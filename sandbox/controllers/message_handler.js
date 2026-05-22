@@ -1,7 +1,4 @@
-import { appendMessage } from '../render/message.js';
 import { appendContextCompressionNotice } from '../render/context_compression.js';
-import { isToolCallOnlyText, splitToolCallFromText } from '../../shared/text/tool_call_text.js';
-import { hasDisplayableText, hasDisplayableThoughts } from '../core/displayable_content.js';
 import { t } from '../core/i18n.js';
 import {
     handleCropScreenshotResult,
@@ -9,7 +6,15 @@ import {
     handleImageFetchResult,
     handleSelectionTextResult,
 } from './message_results.js';
-import { hasMatchingReplyMedia } from './message_matchers.js';
+import { MessageReplyRenderState, renderGeminiReply } from './message_reply_renderer.js';
+import {
+    MessageStreamState,
+    clearActiveStream as clearActiveStreamHelper,
+    createStreamingBubble as createStreamingBubbleHelper,
+    finalizeActiveStream as finalizeActiveStreamHelper,
+    resetStream as resetStreamHelper,
+    restoreStreamForSession as restoreStreamForSessionHelper,
+} from './message_stream_state.js';
 import {
     handleToolCallStatusMessage as handleToolCallStatusMessageRequest,
     handleToolOutputMessage as handleToolOutputMessageRequest,
@@ -23,8 +28,8 @@ export class MessageHandler {
         this.app = appController; // Reference back to app for state like captureMode
         this.streamingBubble = null;
         this.contextCompressionNotice = null;
-        this.streamStates = new Map();
-        this.storageRenderedMessageCounts = new Map();
+        this.streamState = new MessageStreamState();
+        this.replyRenderState = new MessageReplyRenderState();
     }
 
     async handle(request) {
@@ -100,114 +105,28 @@ export class MessageHandler {
     }
 
     hasPersistedAiReply(session, request) {
-        if (!session || !Array.isArray(session.messages) || session.messages.length === 0) {
-            return false;
-        }
-
-        const lastMessage = session.messages[session.messages.length - 1];
-        if (!lastMessage || lastMessage.role !== 'ai') return false;
-
-        const expectedText = request.text || '';
-        const actualText = lastMessage.text || '';
-        const mediaMatches = hasMatchingReplyMedia(lastMessage, request);
-        const textMatches = expectedText
-            ? actualText === expectedText || actualText.startsWith(expectedText)
-            : actualText.length > 0 || mediaMatches;
-        if (!textMatches) return false;
-
-        if (request.thoughts) {
-            const actualThoughts = lastMessage.thoughts || '';
-            return (
-                actualThoughts === request.thoughts || actualThoughts.startsWith(request.thoughts)
-            );
-        }
-
-        return true;
+        return this.replyRenderState.hasPersistedAiReply(session, request);
     }
 
     markSessionRenderedFromStorage(sessionId, messageCount) {
-        if (!sessionId || !Number.isInteger(messageCount)) return;
-        this.storageRenderedMessageCounts.set(sessionId, messageCount);
+        this.replyRenderState.markSessionRenderedFromStorage(sessionId, messageCount);
     }
 
     hasStorageRenderedAiReply(session, request) {
-        if (!session || !session.id) return false;
-        const renderedCount = this.storageRenderedMessageCounts.get(session.id);
-        if (!Number.isInteger(renderedCount)) return false;
-        if (!Array.isArray(session.messages) || renderedCount < session.messages.length)
-            return false;
-        return this.hasPersistedAiReply(session, request);
+        return this.replyRenderState.hasStorageRenderedAiReply(session, request);
     }
 
     getRequestSessionId(request) {
         return request?.sessionId || null;
     }
 
-    cacheStreamState(request) {
-        const sessionId = this.getRequestSessionId(request);
-        if (!sessionId) return null;
-
-        const previous = this.streamStates.get(sessionId) || {};
-        const next = {
-            ...previous,
-            sessionId,
-        };
-
-        if (request.text !== undefined) {
-            const rawText = request.text || '';
-            const split = splitToolCallFromText(rawText, { allowPartial: true });
-            next.rawText = rawText;
-            next.text = split.displayText;
-            if (split.hasToolCall) {
-                next.toolCallText = split.toolCallText;
-            }
-        }
-        if (request.thoughts !== undefined) {
-            next.thoughts = request.thoughts || '';
-        }
-        if (hasDisplayableThoughts(next.thoughts)) {
-            if (!Number.isFinite(next.thoughtsStartedAt)) {
-                const elapsedSeconds = Number.isFinite(next.thoughtsElapsedSeconds)
-                    ? next.thoughtsElapsedSeconds
-                    : 0;
-                next.thoughtsStartedAt = Date.now() - elapsedSeconds * 1000;
-            }
-            next.thoughtsElapsedSeconds = Math.max(0, (Date.now() - next.thoughtsStartedAt) / 1000);
-        }
-        if (request.contextState !== undefined) {
-            next.contextState = request.contextState || null;
-        }
-
-        this.streamStates.set(sessionId, next);
-        return next;
-    }
-
     clearStreamState(sessionId = null) {
-        if (sessionId) {
-            this.streamStates.delete(sessionId);
-            return;
-        }
-        this.streamStates.clear();
-    }
-
-    createStreamingBubble(state = {}) {
-        const bubble = appendMessage(this.ui.historyDiv, '', 'ai', null, '', null, {
-            isStreaming: true,
-            thoughtsStartedAt: state.thoughtsStartedAt,
-            thoughtsElapsedSeconds: state.thoughtsElapsedSeconds,
-        });
-
-        bubble.update(state.text || '', state.thoughts || '', {
-            isStreaming: true,
-            thoughtsStartedAt: state.thoughtsStartedAt,
-            thoughtsElapsedSeconds: state.thoughtsElapsedSeconds,
-        });
-        this.streamingBubble = bubble;
+        this.streamState.clear(sessionId);
     }
 
     handleStreamUpdate(request) {
         if (!this.isGeneratingSessionMessage(request)) return;
-        const state = this.cacheStreamState(request);
+        const state = this.streamState.cache(request);
         const displayText = state?.text || '';
 
         // Prevent race condition: Ignore stream updates arriving shortly after user cancelled
@@ -220,7 +139,7 @@ export class MessageHandler {
 
         // If we don't have a bubble yet, create one
         if (!this.streamingBubble) {
-            this.createStreamingBubble(state);
+            createStreamingBubbleHelper(this, state);
         }
 
         // Update content if text or thoughts exist
@@ -235,7 +154,7 @@ export class MessageHandler {
 
     handleContextStatus(request) {
         if (!this.isGeneratingSessionMessage(request)) return;
-        const state = this.cacheStreamState({
+        const state = this.streamState.cache({
             ...request,
             contextState: request.state === 'compressing' ? request.state : null,
         });
@@ -283,60 +202,7 @@ export class MessageHandler {
         }
 
         const session = this.sessionManager.getCurrentSession();
-        if (session) {
-            // Note: We do NOT save to sessionManager/storage here anymore.
-            // The background script saves the AI response to storage and broadcasts 'SESSIONS_UPDATED'.
-            // The AppController handles that broadcast to keep data in sync.
-            // We just ensure the UI is visually complete here.
-
-            if (request.status === 'success') {
-                // Although session data comes from background, we might want to ensure context matches locally
-                // just in case further user prompts happen before SESSIONS_UPDATED arrives (rare)
-                this.sessionManager.updateContext(session.id, request.context);
-            }
-
-            // Update UI
-            if (this.streamingBubble) {
-                if (this.hasStorageRenderedAiReply(session, request)) {
-                    this.resetStream({ remove: true });
-                    return;
-                }
-
-                // Finalize the streaming bubble with complete text and thoughts
-                this.streamingBubble.finalize(request.text, request.thoughts, {
-                    thoughtsDurationSeconds: request.thoughtsDurationSeconds,
-                });
-
-                // Inject images if any
-                if (request.images && request.images.length > 0) {
-                    this.streamingBubble.addImages(request.images);
-                }
-
-                if (request.sources && request.sources.length > 0) {
-                    this.streamingBubble.addSources(request.sources);
-                }
-
-                // Clear reference
-                this.streamingBubble = null;
-            } else {
-                // Fallback if no stream occurred (or single short response)
-                if (this.hasStorageRenderedAiReply(session, request)) {
-                    return;
-                }
-                appendMessage(
-                    this.ui.historyDiv,
-                    request.text,
-                    'ai',
-                    request.images,
-                    request.thoughts,
-                    request.sources,
-                    {
-                        isFinal: true,
-                        thoughtsDurationSeconds: request.thoughtsDurationSeconds,
-                    }
-                );
-            }
-        }
+        renderGeminiReply(this, session, request);
     }
 
     handleToolOutputMessage(request) {
@@ -348,74 +214,23 @@ export class MessageHandler {
     }
 
     finalizeActiveStream(state = {}) {
-        if (!this.streamingBubble) return;
-        let finalText;
-        if (state.clearToolCallJson) {
-            const split = splitToolCallFromText(state.text || '', { allowPartial: true });
-            if (split.hasToolCall) {
-                finalText = split.displayText;
-            } else if (isToolCallOnlyText(state.text, { allowPartial: true })) {
-                finalText = '';
-            }
-            finalText = finalText || '';
-        }
-        if (
-            state.clearToolCallJson &&
-            !hasDisplayableText(finalText) &&
-            !hasDisplayableThoughts(state.thoughts)
-        ) {
-            if (typeof this.streamingBubble.dispose === 'function') {
-                this.streamingBubble.dispose();
-            }
-            if (this.streamingBubble.div && typeof this.streamingBubble.div.remove === 'function') {
-                this.streamingBubble.div.remove();
-            }
-            this.streamingBubble = null;
-            return;
-        }
-        if (typeof this.streamingBubble.finalize === 'function') {
-            const finalThoughts = hasDisplayableThoughts(state.thoughts)
-                ? state.thoughts
-                : undefined;
-            this.streamingBubble.finalize(finalText, finalThoughts, {
-                suppressCopy: state.clearToolCallJson === true,
-            });
-        } else if (typeof this.streamingBubble.dispose === 'function') {
-            this.streamingBubble.dispose();
-        }
-        this.streamingBubble = null;
+        finalizeActiveStreamHelper(this, state);
     }
 
     getStreamToolCallText(sessionId) {
-        if (!sessionId) return '';
-        const state = this.streamStates.get(sessionId);
-        if (typeof state?.toolCallText === 'string' && state.toolCallText.trim()) {
-            return state.toolCallText;
-        }
-        const split = splitToolCallFromText(state?.rawText || state?.text || '', {
-            allowPartial: true,
-        });
-        return split.toolCallText;
+        return this.streamState.getToolCallText(sessionId);
     }
 
     getStreamRawText(sessionId) {
-        if (!sessionId) return '';
-        const state = this.streamStates.get(sessionId);
-        return typeof state?.rawText === 'string' ? state.rawText : state?.text || '';
+        return this.streamState.getRawText(sessionId);
     }
 
     getStreamThoughts(sessionId) {
-        if (!sessionId) return '';
-        const state = this.streamStates.get(sessionId);
-        return typeof state?.thoughts === 'string' ? state.thoughts : '';
+        return this.streamState.getThoughts(sessionId);
     }
 
     getRequestToolCallText(request, sessionId) {
-        const requestText = typeof request?.toolCallText === 'string' ? request.toolCallText : '';
-        const split = splitToolCallFromText(requestText, { allowPartial: true });
-        if (split.hasToolCall) return split.toolCallText;
-        if (isToolCallOnlyText(requestText, { allowPartial: true })) return requestText.trim();
-        return this.getStreamToolCallText(sessionId);
+        return this.streamState.getRequestToolCallText(request, sessionId);
     }
 
     handleImageResult(request) {
@@ -443,46 +258,16 @@ export class MessageHandler {
 
     // Called by AppController on cancel/switch
     resetStream(options = {}) {
-        if (this.streamingBubble) {
-            if (typeof this.streamingBubble.dispose === 'function') {
-                this.streamingBubble.dispose();
-            }
-            if (options.remove === true && this.streamingBubble.div) {
-                this.streamingBubble.div.remove();
-            }
-            this.streamingBubble = null;
-        }
-        if (this.contextCompressionNotice && options.remove === true) {
-            this.contextCompressionNotice.dispose?.();
-        }
-        this.contextCompressionNotice = null;
+        resetStreamHelper(this, options);
     }
 
     clearActiveStream() {
-        const activeSessionId =
-            this.app.generatingSessionId || this.sessionManager.currentSessionId || null;
-        this.clearStreamState(activeSessionId);
-        this.resetStream({ remove: true });
+        clearActiveStreamHelper(this);
     }
 
     restoreStreamForSession(sessionId) {
-        if (!sessionId || sessionId !== this.app.generatingSessionId) return;
-        const state = this.streamStates.get(sessionId);
-        if (!state) return;
-        const session = this.sessionManager.getCurrentSession();
-        if (this.hasPersistedAiReply(session, state)) {
-            this.clearStreamState(sessionId);
-            return;
-        }
-
-        this.resetStream();
-        if (state.contextState === 'compressing') {
-            this.contextCompressionNotice = appendContextCompressionNotice(
-                this.ui.historyDiv,
-                t('contextCompressing')
-            );
-        }
-        this.createStreamingBubble(state);
-        this.ui.setLoading(true);
+        restoreStreamForSessionHelper(this, sessionId, (session, state) =>
+            this.hasPersistedAiReply(session, state)
+        );
     }
 }

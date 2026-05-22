@@ -75,10 +75,10 @@ describe('GeminiToolbarTemplates', () => {
         const wrapper = document.createElement('div');
         wrapper.innerHTML = window.GeminiToolbarTemplates.mainStructure;
 
-        const item = wrapper.querySelector('#btn-image-translate');
+        const translationMenuItem = wrapper.querySelector('#btn-image-translate');
 
-        expect(item).not.toBeNull();
-        expect(item.textContent).toContain('Translate image text');
+        expect(translationMenuItem).not.toBeNull();
+        expect(translationMenuItem.textContent).toContain('Translate image text');
     });
 
     it('renders the image tools trigger with the Gemini logo', () => {

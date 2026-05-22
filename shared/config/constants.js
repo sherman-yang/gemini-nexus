@@ -6,7 +6,7 @@ export const DEFAULT_SHORTCUTS = {
 };
 
 export const DEFAULT_PROVIDER = 'web';
-export const DEFAULT_STORED_GEMINI_MODEL = 'gemini-3-flash';
+export const DEFAULT_STORED_GEMINI_MODEL = '8c46e95b1a07cecc';
 export const DEFAULT_OFFICIAL_MODEL = 'gemini-3-flash-preview';
 export const DEFAULT_OFFICIAL_MODELS = 'gemini-3-flash-preview, gemini-3.1-pro-preview';
 export const DEFAULT_OFFICIAL_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';

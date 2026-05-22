@@ -1,4 +1,3 @@
-import { downloadFile, downloadText } from './downloads.js';
 import {
     DEFAULT_CONTEXT_MODE,
     normalizeContextRecentTurns,
@@ -8,21 +7,13 @@ import {
     createConnectionSettingsPayload,
     createConnectionStorageUpdate,
 } from '../../shared/settings/connection.js';
-import { CUSTOM_SELECTION_TOOLS_STORAGE_KEY } from '../../shared/settings/selection_tools.js';
 import {
     mergeSessionSaveWithCurrent,
     normalizeDeletedSessionIds,
     normalizeSessionSavePayload,
 } from './session_merge.js';
-import { publishHostContext } from './host_context.js';
-import {
-    restoreAccountIndices,
-    restoreContextSettings,
-    restoreCustomSelectionTools,
-    restoreImageTools,
-    restoreTextSelection,
-    restoreTextSelectionBlacklist,
-} from './preferences.js';
+import { captureDisplayStill } from './screen_capture.js';
+import { handleWindowMessageAction } from './window_actions.js';
 
 function getModelSaveKey(payload) {
     if (payload && typeof payload === 'object') {
@@ -65,103 +56,7 @@ export class MessageBridge {
         const { action, payload } = event.data || {};
         if (!action) return;
 
-        switch (action) {
-            case 'UI_READY':
-                this.state.markUiReady();
-                return void publishHostContext(this.frame, () => this.isRunningInTab());
-            case 'OPEN_FULL_PAGE':
-                this.openFullPage();
-                return;
-            case 'OPEN_SETTINGS_PAGE':
-                this.openSettingsPage();
-                return;
-            case 'OPEN_EXTERNAL_URL':
-                this.openExternalUrl(payload);
-                return;
-            case 'REQUEST_SCREEN_CAPTURE':
-                this.requestScreenCapture();
-                return;
-            case 'FORWARD_TO_BACKGROUND':
-                this.forwardToBackground(payload);
-                return;
-            case 'DOWNLOAD_IMAGE':
-                downloadFile(payload.url, payload.filename);
-                return;
-            case 'DOWNLOAD_LOGS':
-                downloadText(payload.text, payload.filename || 'gemini-nexus-logs.txt');
-                return;
-            case 'GET_TEXT_SELECTION':
-                restoreTextSelection(this.frame);
-                return;
-            case 'GET_TEXT_SELECTION_BLACKLIST':
-                restoreTextSelectionBlacklist(this.frame);
-                return;
-            case 'GET_CUSTOM_SELECTION_TOOLS':
-                restoreCustomSelectionTools(this.frame);
-                return;
-            case 'GET_IMAGE_TOOLS':
-                restoreImageTools(this.frame);
-                return;
-            case 'GET_ACCOUNT_INDICES':
-                restoreAccountIndices(this.frame);
-                return;
-            case 'GET_CONTEXT_SETTINGS':
-                restoreContextSettings(this.frame);
-                return;
-            case 'GET_CONNECTION_SETTINGS':
-                this.restoreConnectionSettings();
-                return;
-            case 'SAVE_SESSIONS':
-                this.saveSessionsSafely(payload);
-                return;
-            case 'SAVE_SHORTCUTS':
-                this.state.save('geminiShortcuts', payload);
-                return;
-            case 'SAVE_MODEL':
-                this.saveSelectedModel(payload);
-                return;
-            case 'SAVE_THEME':
-                this.state.save('geminiTheme', payload);
-                return;
-            case 'SAVE_LANGUAGE':
-                this.state.save('geminiLanguage', payload);
-                return;
-            case 'SAVE_TEXT_SELECTION':
-                this.state.save('geminiTextSelectionEnabled', payload);
-                return;
-            case 'SAVE_TEXT_SELECTION_BLACKLIST':
-                this.state.save('geminiTextSelectionBlacklist', payload || '');
-                return;
-            case 'SAVE_CUSTOM_SELECTION_TOOLS':
-                this.state.save(
-                    CUSTOM_SELECTION_TOOLS_STORAGE_KEY,
-                    Array.isArray(payload) ? payload : []
-                );
-                return;
-            case 'SAVE_IMAGE_TOOLS':
-                this.state.save('geminiImageToolsEnabled', payload);
-                return;
-            case 'SAVE_SIDEBAR_BEHAVIOR':
-                this.state.save('geminiSidebarBehavior', payload);
-                return;
-            case 'SAVE_SIDE_PANEL_SCOPE':
-                this.state.save('geminiSidePanelScope', payload);
-                return;
-            case 'SAVE_SIDE_PANEL_SESSION_BINDING':
-                this.saveSidePanelSessionBinding(payload);
-                return;
-            case 'SAVE_ACCOUNT_INDICES':
-                this.state.save('geminiAccountIndices', payload);
-                return;
-            case 'SAVE_CONTEXT_SETTINGS':
-                this.saveContextSettings(payload);
-                return;
-            case 'SAVE_CONNECTION_SETTINGS':
-                this.saveConnectionSettings(payload);
-                return;
-            default:
-                return;
-        }
+        handleWindowMessageAction(action, payload, this);
     }
 
     openFullPage() {
@@ -207,7 +102,7 @@ export class MessageBridge {
     }
 
     requestScreenCapture() {
-        this._captureDisplayStill()
+        captureDisplayStill()
             .then((payload) => {
                 this.postBackgroundMessage(payload);
             })
@@ -324,68 +219,10 @@ export class MessageBridge {
             return;
         }
 
-        // Forward all other background messages to sandbox (e.g. GEMINI_STREAM_UPDATE)
         this.frame.postMessage({
             action: 'BACKGROUND_MESSAGE',
             payload: message,
         });
-    }
-
-    async _captureDisplayStill() {
-        const mediaDevices = navigator.mediaDevices;
-        if (!mediaDevices || typeof mediaDevices.getDisplayMedia !== 'function') {
-            throw new Error('Screen capture is not supported in this browser.');
-        }
-
-        const stream = await mediaDevices.getDisplayMedia({
-            video: true,
-            audio: false,
-        });
-
-        try {
-            const video = document.createElement('video');
-            video.srcObject = stream;
-            video.muted = true;
-            video.playsInline = true;
-
-            const metadataReady = new Promise((resolve, reject) => {
-                const cleanup = () => {
-                    video.removeEventListener('loadedmetadata', handleReady);
-                    video.removeEventListener('error', handleError);
-                };
-                const handleReady = () => {
-                    cleanup();
-                    resolve();
-                };
-                const handleError = () => {
-                    cleanup();
-                    reject(new Error('Failed to read selected screen.'));
-                };
-
-                video.addEventListener('loadedmetadata', handleReady, { once: true });
-                video.addEventListener('error', handleError, { once: true });
-            });
-            await video.play();
-            await metadataReady;
-
-            const width = video.videoWidth || 1;
-            const height = video.videoHeight || 1;
-            const canvas = document.createElement('canvas');
-            canvas.width = width;
-            canvas.height = height;
-            const context = canvas.getContext('2d');
-            if (!context) throw new Error('Failed to prepare screen capture.');
-            context.drawImage(video, 0, 0, width, height);
-
-            return {
-                action: 'FETCH_IMAGE_RESULT',
-                base64: canvas.toDataURL('image/png'),
-                type: 'image/png',
-                name: 'screen_capture.png',
-            };
-        } finally {
-            stream.getTracks().forEach((track) => track.stop());
-        }
     }
 
     _attachCurrentTabContext(payload) {

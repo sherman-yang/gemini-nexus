@@ -33,9 +33,9 @@ export class ImageManager {
             let handledFiles = false;
             let handledHtmlImages = false;
 
-            for (const item of items) {
-                if (item.kind === 'file') {
-                    const file = item.getAsFile();
+            for (const clipboardItem of items) {
+                if (clipboardItem.kind === 'file') {
+                    const file = clipboardItem.getAsFile();
                     if (file) {
                         this.handleFile(file);
                         handledFiles = true;
@@ -231,8 +231,8 @@ export class ImageManager {
         this.imagePreview.classList.add('has-image');
 
         this.files.forEach((file, index) => {
-            const item = document.createElement('div');
-            item.className = 'preview-item';
+            const previewItem = document.createElement('div');
+            previewItem.className = 'preview-item';
 
             const removeButton = document.createElement('button');
             removeButton.className = 'preview-remove-btn';
@@ -241,12 +241,12 @@ export class ImageManager {
                 clickEvent.stopPropagation();
                 this.removeFile(index);
             };
-            item.appendChild(removeButton);
+            previewItem.appendChild(removeButton);
 
             if (file.type && file.type.startsWith('image/')) {
                 const img = document.createElement('img');
                 img.src = file.base64;
-                item.appendChild(img);
+                previewItem.appendChild(img);
             } else {
                 const card = document.createElement('div');
                 card.className = 'file-item-card';
@@ -274,10 +274,10 @@ export class ImageManager {
                 name.textContent = file.name || 'attachment';
 
                 card.append(icon, name);
-                item.appendChild(card);
+                previewItem.appendChild(card);
             }
 
-            this.imagePreview.appendChild(item);
+            this.imagePreview.appendChild(previewItem);
         });
     }
 }

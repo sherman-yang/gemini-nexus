@@ -45,7 +45,7 @@ function cloneJson(value) {
     if (value === undefined) return undefined;
     try {
         return JSON.parse(JSON.stringify(value));
-    } catch (_) {
+    } catch {
         return value;
     }
 }

@@ -11,7 +11,7 @@
         try {
             const url = new URL(href);
             return url.protocol === 'https:' && url.hostname === 'gemini.google.com';
-        } catch (_) {
+        } catch {
             return false;
         }
     }
@@ -109,7 +109,7 @@
         try {
             const stored = await storage.get(WINDOW_SIZE_STORAGE_KEY);
             return stored?.[WINDOW_SIZE_STORAGE_KEY] || null;
-        } catch (_) {
+        } catch {
             return null;
         }
     }

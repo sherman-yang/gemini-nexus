@@ -100,13 +100,17 @@ describe('project structure', () => {
 
     it('keeps MCP manager helpers split from the connection state machine', async () => {
         const helperModules = [
+            'background/managers/mcp/connection_client.js',
             'background/managers/mcp/handshake.js',
             'background/managers/mcp/transport.js',
             'background/managers/mcp/tool_result.js',
             'background/managers/mcp/preamble.js',
             'background/managers/mcp/server_tools.js',
             'background/managers/mcp/sse_stream.js',
+            'background/managers/mcp/sse_connection.js',
             'background/managers/mcp/streamable_http.js',
+            'background/managers/mcp/streamable_http_connection.js',
+            'background/managers/mcp/websocket_connection.js',
             'background/managers/mcp/rpc_messages.js',
             'background/managers/mcp/tool_listing.js',
             'background/managers/mcp/connection_state.js',
@@ -117,20 +121,34 @@ describe('project structure', () => {
         }
 
         const manager = await readProjectFile('background/managers/mcp_remote_manager.js');
-        expect(manager).toContain("from './mcp/handshake.js'");
-        expect(manager).toContain("from './mcp/transport.js'");
+        const connectionClient = await readProjectFile(
+            'background/managers/mcp/connection_client.js'
+        );
+        expect(manager).toContain("from './mcp/connection_client.js'");
+        expect(manager).not.toContain("from './mcp/handshake.js'");
+        expect(manager).not.toContain("from './mcp/transport.js'");
+        expect(manager).not.toContain("from './mcp/sse_stream.js'");
+        expect(manager).not.toContain("from './mcp/streamable_http.js'");
+        expect(manager).not.toContain("from './mcp/rpc_messages.js'");
+        expect(manager).not.toContain("from './mcp/connection_state.js'");
         expect(manager).toContain("from './mcp/tool_result.js'");
         expect(manager).toContain("from './mcp/preamble.js'");
         expect(manager).toContain("from './mcp/server_tools.js'");
-        expect(manager).toContain("from './mcp/sse_stream.js'");
-        expect(manager).toContain("from './mcp/streamable_http.js'");
-        expect(manager).toContain("from './mcp/rpc_messages.js'");
         expect(manager).toContain("from './mcp/tool_listing.js'");
-        expect(manager).toContain("from './mcp/connection_state.js'");
+        expect(connectionClient).toContain("from './handshake.js'");
+        expect(connectionClient).toContain("from './transport.js'");
+        expect(connectionClient).toContain("from './streamable_http.js'");
+        expect(connectionClient).toContain("from './rpc_messages.js'");
+        expect(connectionClient).toContain("from './connection_state.js'");
+        expect(connectionClient).toContain("from './websocket_connection.js'");
+        expect(connectionClient).toContain("from './sse_connection.js'");
+        expect(connectionClient).toContain("from './streamable_http_connection.js'");
+        expect(connectionClient).not.toContain("from './sse_stream.js'");
         expect(manager).not.toMatch(/\b_createConnectionState\s*\(/);
         expect(manager).not.toContain('DEBUG_MCP_REMOTE');
         expect(manager).not.toContain('debugMcpRemote');
-        expect(countCodeLines(manager)).toBeLessThan(510);
+        expect(countCodeLines(manager)).toBeLessThan(220);
+        expect(countCodeLines(connectionClient)).toBeLessThan(240);
     });
 
     it('documents current shared and directory entrypoint conventions', async () => {
@@ -198,12 +216,14 @@ describe('project structure', () => {
         const promptBuilder = await readProjectFile(
             'background/handlers/session/prompt/builder.js'
         );
+        const toolLoop = await readProjectFile('background/handlers/session/prompt/tool_loop.js');
         const toolExecutor = await readProjectFile(
             'background/handlers/session/prompt/tool_executor.js'
         );
 
-        expect(promptHandler).toContain("from './official_function_response.js'");
-        expect(promptHandler).toContain("from '../../../shared/text/tool_call_text.js'");
+        expect(promptHandler).toContain("from './prompt/tool_loop.js'");
+        expect(toolLoop).toContain("from '../official_function_response.js'");
+        expect(toolLoop).toContain("from '../../../../shared/text/tool_call_text.js'");
         expect(promptBuilder).toContain("from '../active_tab_content.js'");
         expect(toolExecutor).toContain("from '../../../../shared/text/tool_call_text.js'");
     });
@@ -244,6 +264,9 @@ describe('project structure', () => {
         expect(sandboxHtml).toContain('../css/image_viewer.css');
         expect(sandboxHtml).toContain('../css/settings.css');
         expect(sandboxHtml).toContain('../css/settings_controls.css');
+        expect(sandboxHtml).toContain('../css/settings_forms.css');
+        expect(sandboxHtml).toContain('../css/settings_mcp.css');
+        expect(sandboxHtml).toContain('../css/settings_custom_tools.css');
         expect(sandboxHtml).toContain('../css/chat_tools.css');
         expect(sandboxHtml).toContain('../css/chat_references.css');
         expect(sandboxHtml).toContain('../css/chat_media.css');
@@ -269,6 +292,19 @@ describe('project structure', () => {
         await expect(exists('sidepanel/index.css')).resolves.toBe(true);
         expect(settingsHtml).toContain('../css/settings.css');
         expect(settingsHtml).toContain('../css/settings_controls.css');
+        expect(settingsHtml).toContain('../css/settings_forms.css');
+        expect(settingsHtml).toContain('../css/settings_mcp.css');
+        expect(settingsHtml).toContain('../css/settings_custom_tools.css');
+        await expect(exists('css/settings_forms.css')).resolves.toBe(true);
+        await expect(exists('css/settings_mcp.css')).resolves.toBe(true);
+        await expect(exists('css/settings_custom_tools.css')).resolves.toBe(true);
+        expect(await readProjectFile('css/settings_controls.css')).not.toContain(
+            '.settings-input.settings-select'
+        );
+        expect(await readProjectFile('css/settings_controls.css')).not.toContain('.mcp-tool-list');
+        expect(await readProjectFile('css/settings_controls.css')).not.toContain(
+            '.custom-selection-tool-row'
+        );
         expect(await readProjectFile('sandbox/ui/layout.js')).not.toContain('SettingsTemplate +');
     });
 
@@ -332,12 +368,19 @@ describe('project structure', () => {
     it('names content toolbar classic helpers by their controller responsibilities', async () => {
         await expect(exists('content/toolbar/drag_controller.js')).resolves.toBe(true);
         await expect(exists('content/toolbar/input_manager.js')).resolves.toBe(true);
+        await expect(exists('content/toolbar/ui/custom_selection_tools.js')).resolves.toBe(true);
+        await expect(exists('content/toolbar/ui/translation_target_store.js')).resolves.toBe(true);
         await expect(exists('content/toolbar/utils/drag.js')).resolves.toBe(false);
         await expect(exists('content/toolbar/utils/input.js')).resolves.toBe(false);
 
-        const uiManager = await readProjectFile('content/toolbar/ui/manager.js');
+        const toolbarUi = await readProjectFile('content/toolbar/ui/toolbar_ui.js');
         const controller = await readProjectFile('content/toolbar/controller.js');
-        expect(uiManager).toContain('GeminiDragController');
+        expect(toolbarUi).toContain('GeminiDragController');
+        expect(toolbarUi).toContain('GeminiCustomSelectionToolsUI');
+        expect(toolbarUi).toContain('GeminiTranslationTargetStore');
+        expect(toolbarUi).not.toMatch(/^\s{8}renderCustomSelectionTools\s*\(/m);
+        expect(toolbarUi).not.toMatch(/^\s{8}getToolButtonLabel\s*\(/m);
+        expect(toolbarUi).not.toContain('TRANSLATION_TARGET_STORAGE_KEY');
         expect(controller).toContain('GeminiInputManager');
     });
 
@@ -357,10 +400,17 @@ describe('project structure', () => {
 
         const message = await readProjectFile('sandbox/render/message.js');
         const pipeline = await readProjectFile('sandbox/render/pipeline.js');
+        await expect(exists('sandbox/render/thoughts_block.js')).resolves.toBe(true);
+        await expect(exists('sandbox/render/message_spacing.js')).resolves.toBe(true);
         expect(message).toContain("from './content.js'");
+        expect(message).toContain("from './thoughts_block.js'");
+        expect(message).toContain("from './message_spacing.js'");
         expect(message).toContain("from '../core/displayable_content.js'");
         expect(message).not.toContain('appendContextCompressionNotice');
         expect(message).not.toMatch(/\bfunction hasDisplayable(Text|Thoughts)\s*\(/);
+        expect(message).not.toMatch(/\bfunction formatThoughtDuration\s*\(/);
+        expect(message).not.toContain('THOUGHTS_REGION_PREFIX');
+        expect(message).not.toMatch(/\bconst isCompactSpacingPair\s*=/);
         expect(message).toContain("from './copy_button.js'");
         expect(message).toContain("from './message_edit.js'");
         expect(message).toContain("from './message_media.js'");
@@ -369,14 +419,16 @@ describe('project structure', () => {
         expect(pipeline).toContain("from './math_placeholders.js'");
         expect(pipeline).toContain('MathPlaceholderProtector');
         expect(pipeline).not.toContain("from './math_utils.js'");
-        expect(countCodeLines(message)).toBeLessThan(500);
+        expect(countCodeLines(message)).toBeLessThan(340);
     });
 
     it('keeps message result helpers split from the message controller', async () => {
         const helperModules = [
             'sandbox/core/displayable_content.js',
             'sandbox/controllers/message_matchers.js',
+            'sandbox/controllers/message_reply_renderer.js',
             'sandbox/controllers/message_results.js',
+            'sandbox/controllers/message_stream_state.js',
             'sandbox/controllers/message_tools.js',
             'sandbox/controllers/message_tool_messages.js',
         ];
@@ -386,17 +438,65 @@ describe('project structure', () => {
         }
 
         const handler = await readProjectFile('sandbox/controllers/message_handler.js');
+        const replyRenderer = await readProjectFile(
+            'sandbox/controllers/message_reply_renderer.js'
+        );
+        const streamState = await readProjectFile('sandbox/controllers/message_stream_state.js');
         const toolMessages = await readProjectFile('sandbox/controllers/message_tool_messages.js');
-        expect(handler).toContain("from '../core/displayable_content.js'");
-        expect(handler).toContain("from './message_matchers.js'");
+        expect(handler).toContain("from './message_reply_renderer.js'");
         expect(handler).toContain("from './message_results.js'");
+        expect(handler).toContain("from './message_stream_state.js'");
         expect(handler).toContain("from './message_tool_messages.js'");
+        expect(replyRenderer).toContain("from './message_matchers.js'");
+        expect(streamState).toContain("from '../core/displayable_content.js'");
         expect(handler).not.toContain("from './message_tools.js'");
         expect(toolMessages).toContain("from './message_tools.js'");
         expect(handler).not.toMatch(/^\s{4}buildToolOutputHistoryText\s*\(/m);
+        expect(handler).not.toMatch(/^\s{4}cacheStreamState\s*\(/m);
+        expect(handler).not.toMatch(/^\s{4}createStreamingBubble\s*\(/m);
+        expect(handler).not.toMatch(/^\s{4}renderGeminiReply\s*\(/m);
         expect(handler).not.toContain("kind: 'tool-output'");
         expect(handler).not.toContain("kind: 'tool-status'");
-        expect(countCodeLines(handler)).toBeLessThan(600);
+        expect(countCodeLines(handler)).toBeLessThan(340);
+    });
+
+    it('keeps OpenAI-compatible payload and response helpers split from provider transport', async () => {
+        const helperModules = [
+            'services/providers/openai_payloads.js',
+            'services/providers/openai_response_extractors.js',
+        ];
+
+        for (const modulePath of helperModules) {
+            await expect(exists(modulePath)).resolves.toBe(true);
+        }
+
+        const provider = await readProjectFile('services/providers/openai_compatible.js');
+        expect(provider).toContain("from './openai_payloads.js'");
+        expect(provider).toContain("from './openai_response_extractors.js'");
+        expect(provider).not.toMatch(/\bfunction buildChatMessages\s*\(/);
+        expect(provider).not.toMatch(/\bfunction buildResponsesInput\s*\(/);
+        expect(provider).not.toMatch(/\bfunction extractTextFromCompletedResponse\s*\(/);
+        expect(provider).not.toMatch(/\bfunction extractSourcesFromAnnotation\s*\(/);
+        expect(countCodeLines(provider)).toBeLessThan(330);
+    });
+
+    it('keeps sandbox boot event groups split by UI surface', async () => {
+        const helperModules = [
+            'sandbox/boot/input_events.js',
+            'sandbox/boot/tool_button_events.js',
+        ];
+
+        for (const modulePath of helperModules) {
+            await expect(exists(modulePath)).resolves.toBe(true);
+        }
+
+        const events = await readProjectFile('sandbox/boot/events.js');
+        expect(events).toContain("from './input_events.js'");
+        expect(events).toContain("from './tool_button_events.js'");
+        expect(events).not.toContain("action: 'GET_ACTIVE_SELECTION'");
+        expect(events).not.toContain("action: 'INITIATE_CAPTURE'");
+        expect(events).not.toMatch(/\bgetToolsPageScrollDistance\s*\(/);
+        expect(countCodeLines(events)).toBeLessThan(95);
     });
 
     it('keeps UI message helper branches split by responsibility', async () => {
@@ -427,12 +527,29 @@ describe('project structure', () => {
         expect(countCodeLines(bridge)).toBeLessThan(420);
     });
 
-    it('keeps sidepanel download actions next to the message bridge', async () => {
-        await expect(exists('sidepanel/core/downloads.js')).resolves.toBe(true);
+    it('keeps sidepanel window actions split from the message bridge', async () => {
+        const helperModules = [
+            'sidepanel/core/downloads.js',
+            'sidepanel/core/screen_capture.js',
+            'sidepanel/core/window_actions.js',
+        ];
+
+        for (const modulePath of helperModules) {
+            await expect(exists(modulePath)).resolves.toBe(true);
+        }
         await expect(exists('sidepanel/utils/download.js')).resolves.toBe(false);
 
         const bridge = await readProjectFile('sidepanel/core/bridge.js');
-        expect(bridge).toContain("from './downloads.js'");
+        const windowActions = await readProjectFile('sidepanel/core/window_actions.js');
+        expect(bridge).toContain("from './screen_capture.js'");
+        expect(bridge).toContain("from './window_actions.js'");
+        expect(bridge).not.toContain("from './downloads.js'");
+        expect(bridge).not.toContain("from './preferences.js'");
+        expect(bridge).not.toContain('WINDOW_MESSAGE_HANDLERS');
+        expect(bridge).not.toMatch(/^\s{4}async _captureDisplayStill\s*\(/m);
+        expect(windowActions).toContain("from './downloads.js'");
+        expect(windowActions).toContain("from './preferences.js'");
         expect(bridge).not.toContain("from '../utils/download.js'");
+        expect(countCodeLines(bridge)).toBeLessThan(300);
     });
 });

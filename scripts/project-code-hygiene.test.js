@@ -94,10 +94,10 @@ describe('project code hygiene', () => {
     });
 
     it('does not keep unread content toolbar controller fields for self-bound DOM listeners', async () => {
-        const uiManager = await readProjectFile('content/toolbar/ui/manager.js');
+        const toolbarUi = await readProjectFile('content/toolbar/ui/toolbar_ui.js');
         const controller = await readProjectFile('content/toolbar/controller.js');
 
-        expect(uiManager).not.toContain('toolbarDragController');
+        expect(toolbarUi).not.toContain('toolbarDragController');
         expect(controller).not.toMatch(/\bthis\.(streamHandler|selectionObserver)\s*=/);
     });
 
@@ -240,7 +240,7 @@ describe('project code hygiene', () => {
             'sandbox/ui/model_options.js',
             'sandbox/ui/ui_controller.js',
             'content/toolbar/view/index.js',
-            'content/toolbar/ui/manager.js',
+            'content/toolbar/ui/toolbar_ui.js',
         ];
 
         for (const sourcePath of sourceFiles) {
@@ -434,7 +434,7 @@ describe('project code hygiene', () => {
         const sourceFiles = [
             'content/toolbar/bridge.js',
             'sandbox/render/content.js',
-            'sandbox/render/message.js',
+            'sandbox/render/thoughts_block.js',
             'sandbox/ui/settings/sections/connection.js',
             'sandbox/ui/settings/sections/general.js',
             'shared/settings/connection.js',
@@ -449,7 +449,7 @@ describe('project code hygiene', () => {
     });
 
     it('keeps model select width measurement in the shared UI helper', async () => {
-        const sourceFiles = ['sandbox/boot/events.js', 'sandbox/ui/ui_controller.js'];
+        const sourceFiles = ['sandbox/boot/input_events.js', 'sandbox/ui/ui_controller.js'];
 
         for (const sourcePath of sourceFiles) {
             const source = await readProjectFile(sourcePath);

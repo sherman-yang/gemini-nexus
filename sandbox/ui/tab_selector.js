@@ -155,17 +155,16 @@ export class TabSelectorController {
         }
 
         tabs.forEach((tab) => {
-            // Is this tab the "Locked" one?
             const isLocked = tab.id === this.currentLockedId;
             const isControllable = tab.controllable !== false;
 
-            const item = document.createElement('div');
+            const tabRow = document.createElement('div');
             // 'active' in CSS usually denotes selection, here we use it for locked state visibility
-            item.className = `history-item browser-tab-item ${isLocked ? 'active' : ''} ${!isControllable ? 'disabled' : ''}`;
-            item.dataset.tabId = String(tab.id);
-            item.setAttribute('role', 'button');
-            item.setAttribute('aria-disabled', String(!isControllable));
-            if (isControllable) item.tabIndex = 0;
+            tabRow.className = `history-item browser-tab-item ${isLocked ? 'active' : ''} ${!isControllable ? 'disabled' : ''}`;
+            tabRow.dataset.tabId = String(tab.id);
+            tabRow.setAttribute('role', 'button');
+            tabRow.setAttribute('aria-disabled', String(!isControllable));
+            if (isControllable) tabRow.tabIndex = 0;
 
             const icon = document.createElement('img');
             icon.src = tab.favIconUrl || '';
@@ -189,7 +188,6 @@ export class TabSelectorController {
             copyWrap.appendChild(titleSpan);
             copyWrap.appendChild(metaSpan);
 
-            // Lock Button (Toggle State)
             const lockButton = document.createElement('button');
             lockButton.type = 'button';
             lockButton.className = 'tab-lock-only-btn';
@@ -217,7 +215,7 @@ export class TabSelectorController {
                 this.close();
             };
 
-            item.onclick = () => {
+            tabRow.onclick = () => {
                 if (!isControllable) return;
 
                 if (!isLocked) {
@@ -227,17 +225,17 @@ export class TabSelectorController {
                 if (this.onSelect) this.onSelect(tab.id, true);
                 this.close();
             };
-            item.onkeydown = (keyEvent) => {
+            tabRow.onkeydown = (keyEvent) => {
                 if (keyEvent.key !== 'Enter' && keyEvent.key !== ' ') return;
                 keyEvent.preventDefault();
-                item.click();
+                tabRow.click();
             };
 
-            item.appendChild(icon);
-            item.appendChild(copyWrap);
-            item.appendChild(lockButton);
+            tabRow.appendChild(icon);
+            tabRow.appendChild(copyWrap);
+            tabRow.appendChild(lockButton);
 
-            this.listEl.appendChild(item);
+            this.listEl.appendChild(tabRow);
         });
     }
 

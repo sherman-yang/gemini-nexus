@@ -16,10 +16,12 @@ describe('project i18n', () => {
             'sandbox/render/copy_button.js',
             'sandbox/render/message_edit.js',
             'sandbox/render/message.js',
+            'sandbox/render/thoughts_block.js',
             'sandbox/render/generated_image.js',
             'sandbox/boot/app.js',
             'sandbox/boot/renderer.js',
             'sandbox/boot/events.js',
+            'sandbox/boot/tool_button_events.js',
             'sandbox/ui/chat.js',
             'sandbox/ui/model_options.js',
             'sandbox/ui/sidebar.js',
@@ -42,7 +44,7 @@ describe('project i18n', () => {
             'sandbox/ui/templates/settings/index.js',
             'sandbox/ui/templates/settings/shortcuts.js',
         ];
-        const i18n = await readProjectFile('sandbox/core/i18n.js');
+        const i18n = await readProjectFile('sandbox/core/translations.js');
         const usedKeys = new Set();
 
         for (const runtimeFile of runtimeFiles) {

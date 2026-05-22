@@ -7,23 +7,23 @@
     const Renderer = window.GeminiUIRenderer;
     const ActionsDelegate = window.GeminiToolbarUIActions;
     const CodeCopyHandler = window.GeminiCodeCopyHandler;
+    const CustomSelectionToolsUI = window.GeminiCustomSelectionToolsUI;
+    const TranslationTargetStore = window.GeminiTranslationTargetStore;
 
     function getStrings() {
         return window.GeminiToolbarStrings || {};
     }
 
-    const TRANSLATION_TARGET_STORAGE_KEY = 'geminiTranslationTargets';
+    function createCustomModelOptions(rawModels, fallbackOption) {
+        const modelIds = String(rawModels || '')
+            .split(',')
+            .map((modelId) => modelId.trim())
+            .filter(Boolean);
 
-    function normalizeTranslationTargets(targets) {
-        const normalizer = window.GeminiToolbarI18n?.normalizeTranslationTargets;
-        if (typeof normalizer === 'function') return normalizer(targets);
-        return Array.isArray(targets) && targets.length > 0 ? targets : ['auto'];
+        if (modelIds.length === 0) return [fallbackOption];
+        return modelIds.map((modelId) => ({ value: modelId, label: modelId }));
     }
 
-    /**
-     * Main UI Manager
-     * Handles lifecycle, view orchestration, and public interface for the Controller.
-     */
     class ToolbarUI {
         constructor() {
             this.host = null;
@@ -35,16 +35,14 @@
             this.callbacks = {};
             this.isBuilt = false;
             this.provider = 'web';
-            this.customSelectionTools = [];
-            this.translationTargets = normalizeTranslationTargets(
-                getStrings().defaultTranslationTargets || ['auto']
-            );
+            this.translationTargetStore = new TranslationTargetStore();
 
             this.grammarManager = null;
-            this.bridge = null; // Renderer Bridge
+            this.bridge = null;
             this.renderer = null;
             this.actionsDelegate = null;
             this.codeCopyHandler = null;
+            this.customSelectionTools = null;
         }
 
         setCallbacks(callbacks) {
@@ -62,6 +60,11 @@
             this.renderer = new Renderer(this.view, this.bridge);
             this.actionsDelegate = new ActionsDelegate(this);
             this.codeCopyHandler = new CodeCopyHandler();
+            this.customSelectionTools = new CustomSelectionToolsUI({
+                elements: this.view.elements,
+                tools: this.customSelectionTools?.getTools?.() || [],
+                onAction: (...args) => this.fireCallback('onAction', ...args),
+            });
             this.dragController = new DragController(
                 this.view.elements.askWindow,
                 this.view.elements.askHeader,
@@ -75,8 +78,8 @@
 
             this.events = new Events(this);
             this.events.bind(this.view.elements, this.view.elements.askWindow);
-            this.view.setSelectedTranslationTargets(this.translationTargets);
-            this.renderCustomSelectionTools();
+            this.view.setSelectedTranslationTargets(this.translationTargetStore.getTargets());
+            this.customSelectionTools.render();
         }
 
         build() {
@@ -95,7 +98,6 @@
             if (!this.isBuilt || !this.domBuilder || !this.domBuilder.rerender) return;
             this.domBuilder.rerender();
             this._initializeRuntimeComponents();
-            this.renderCustomSelectionTools();
         }
 
         get actions() {
@@ -124,87 +126,17 @@
         }
 
         setCustomSelectionTools(tools) {
-            this.customSelectionTools = Array.isArray(tools) ? tools : [];
-            this.renderCustomSelectionTools();
-        }
-
-        renderCustomSelectionTools() {
-            if (!this.view?.elements) return;
-
-            const { customSelectionTools, customSelectionMore, customSelectionMoreMenu } =
-                this.view.elements;
-            if (!customSelectionTools || !customSelectionMore || !customSelectionMoreMenu) return;
-
-            customSelectionTools.replaceChildren();
-            customSelectionMoreMenu.replaceChildren();
-
-            const enabledTools = this.customSelectionTools.filter(
-                (tool) => tool?.enabled !== false && tool?.name && tool?.prompt
-            );
-            const directTools = enabledTools.slice(0, 2);
-            const menuTools = enabledTools.slice(2);
-
-            directTools.forEach((tool) => {
-                const button = document.createElement('button');
-                button.type = 'button';
-                button.className = 'btn custom-selection-tool-btn';
-                button.title = tool.name;
-                button.setAttribute('aria-label', tool.name);
-                button.textContent = this.getToolButtonLabel(tool.name);
-                button.addEventListener('mousedown', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    this.fireCallback('onAction', 'custom_selection_tool', tool);
-                });
-                customSelectionTools.appendChild(button);
-            });
-
-            menuTools.forEach((tool) => {
-                const item = document.createElement('button');
-                item.type = 'button';
-                item.className = 'custom-selection-more-item';
-                item.textContent = tool.name;
-                item.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    this.fireCallback('onAction', 'custom_selection_tool', tool);
-                });
-                customSelectionMoreMenu.appendChild(item);
-            });
-
-            customSelectionMore.classList.toggle('hidden', menuTools.length === 0);
-        }
-
-        getToolButtonLabel(name) {
-            const normalized = String(name || '').trim();
-            if (!normalized) return '+';
-            return normalized.slice(0, 2).toUpperCase();
+            this.customSelectionTools?.setTools(tools);
         }
 
         handleTranslationTargetsChange(targets) {
-            this.translationTargets = normalizeTranslationTargets(targets);
-            this.view.setSelectedTranslationTargets(this.translationTargets);
-
-            const storage = globalThis.chrome?.storage?.local;
-            if (!storage || typeof storage.set !== 'function') return;
-            storage
-                .set({ [TRANSLATION_TARGET_STORAGE_KEY]: this.translationTargets })
-                .catch?.(() => {});
+            const storedTargets = this.translationTargetStore.setTargets(targets);
+            this.view.setSelectedTranslationTargets(storedTargets);
         }
 
         async restoreTranslationTargets() {
-            const storage = globalThis.chrome?.storage?.local;
-            if (!storage || typeof storage.get !== 'function') return;
-
-            try {
-                const stored = await storage.get(TRANSLATION_TARGET_STORAGE_KEY);
-                this.translationTargets = normalizeTranslationTargets(
-                    stored?.[TRANSLATION_TARGET_STORAGE_KEY]
-                );
-                this.view?.setSelectedTranslationTargets(this.translationTargets);
-            } catch (_) {
-                this.view?.setSelectedTranslationTargets(this.translationTargets);
-            }
+            const targets = await this.translationTargetStore.restore();
+            this.view?.setSelectedTranslationTargets(targets);
         }
 
         saveWindowDimensions(width, height) {
@@ -278,7 +210,6 @@
                 await this.renderer.show(text, title, isStreaming, images);
             }
 
-            // Update Grammar UI state
             if (this.grammarManager) {
                 this.grammarManager.updateResultActions(isStreaming);
             }
@@ -312,7 +243,8 @@
 
         setTranslationTargetMode(enabled) {
             this.view.setTranslationTargetsVisible(enabled);
-            if (enabled) this.view.setSelectedTranslationTargets(this.translationTargets);
+            if (enabled)
+                this.view.setSelectedTranslationTargets(this.translationTargetStore.getTargets());
         }
 
         toggleTranslationTargetDropdown() {
@@ -321,14 +253,14 @@
 
         getSelectedTranslationTargets() {
             const selected = this.view?.getSelectedTranslationTargets();
-            this.translationTargets = normalizeTranslationTargets(
-                selected || this.translationTargets
-            );
-            return this.translationTargets;
+            if (selected) {
+                this.translationTargetStore.normalizeTargets(selected);
+            }
+            return this.translationTargetStore.getTargets();
         }
 
         getSelectedModel() {
-            return this.view ? this.view.getSelectedModel() : 'gemini-3-flash';
+            return this.view ? this.view.getSelectedModel() : '8c46e95b1a07cecc';
         }
 
         getProvider() {
@@ -348,37 +280,15 @@
             let options = [];
 
             if (provider === 'official') {
-                const rawModels = settings.officialModel || '';
-                const models = rawModels
-                    .split(',')
-                    .map((m) => m.trim())
-                    .filter((m) => m);
-                if (models.length === 0) {
-                    options = [
-                        {
-                            value: 'gemini-3-flash-preview',
-                            label: 'gemini-3-flash-preview',
-                        },
-                    ];
-                } else {
-                    options = models.map((model) => ({ value: model, label: model }));
-                }
+                options = createCustomModelOptions(settings.officialModel, {
+                    value: 'gemini-3-flash-preview',
+                    label: 'gemini-3-flash-preview',
+                });
             } else if (provider === 'openai') {
-                const rawModels = settings.openaiModel || '';
-                const models = rawModels
-                    .split(',')
-                    .map((m) => m.trim())
-                    .filter((m) => m);
-                if (models.length === 0) {
-                    options = [
-                        {
-                            value: 'openai_custom',
-                            label: getStrings().customModel || 'Custom Model',
-                        },
-                    ];
-                } else {
-                    options = models.map((model) => ({ value: model, label: model }));
-                }
+                options = createCustomModelOptions(settings.openaiModel, {
+                    value: 'openai_custom',
+                    label: getStrings().customModel || 'Custom Model',
+                });
             } else {
                 options = window.GeminiWebModels.createOptions();
             }

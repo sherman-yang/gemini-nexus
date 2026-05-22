@@ -2,34 +2,10 @@ import { renderContent } from './content.js';
 import { createCopyButton } from './copy_button.js';
 import { createMessageEditControl } from './message_edit.js';
 import { createGeneratedImagesGrid, createUserImagesGrid } from './message_media.js';
+import { getMessageSpacingKind, isToolMessageKind, syncMessageSpacing } from './message_spacing.js';
 import { cleanupStructuredSourceText, createSourcesElement } from './sources.js';
-import { hasDisplayableThoughts, hasDisplayableText } from '../core/displayable_content.js';
-import { t } from '../core/i18n.js';
-import { createPrefixedId } from '../../shared/utils/index.js';
-
-const TOOL_MESSAGE_KINDS = new Set(['tool-output', 'tool-status']);
-
-function formatThoughtDuration(seconds) {
-    if (!Number.isFinite(seconds)) return null;
-    if (seconds > 0 && seconds < 1) return '1';
-    return String(Math.max(0, Math.round(seconds)));
-}
-
-function isToolMessageKind(kind) {
-    return TOOL_MESSAGE_KINDS.has(kind);
-}
-
-const THOUGHTS_REGION_PREFIX = 'thoughts-content';
-
-function getThoughtsStartedAtFromOptions(options) {
-    if (Number.isFinite(options.thoughtsStartedAt)) {
-        return options.thoughtsStartedAt;
-    }
-    if (Number.isFinite(options.thoughtsElapsedSeconds)) {
-        return Date.now() - Math.max(0, options.thoughtsElapsedSeconds) * 1000;
-    }
-    return null;
-}
+import { createThoughtsBlock } from './thoughts_block.js';
+import { hasDisplayableText } from '../core/displayable_content.js';
 
 // Appends a message to the chat history and returns an update controller
 // attachment can be:
@@ -64,17 +40,7 @@ export function appendMessage(
     }
 
     let contentDiv = null;
-    let thoughtsDiv = null;
-    let thoughtsToggle = null;
-    let thoughtsStatus = null;
-    let thoughtsContent = null;
-    let thoughtsStartedAt = getThoughtsStartedAtFromOptions(options);
-    let thoughtsDurationSeconds = Number.isFinite(options.thoughtsDurationSeconds)
-        ? options.thoughtsDurationSeconds
-        : null;
-    let thoughtsExpanded = false;
-    let thoughtsFinished = Boolean(options.isFinal);
-    let thoughtsStatusTimer = null;
+    let thoughtsController = null;
     let sourcesDiv = null;
     let editController = null;
     let copyBtn = null;
@@ -113,41 +79,16 @@ export function appendMessage(
     };
 
     const getSpacingKind = () => {
-        if (isToolMessageKind(options.kind)) return 'tool';
-        const displayText = getVisibleMessageText();
-        if (
-            role === 'ai' &&
-            hasDisplayableThoughts(currentThoughts) &&
-            !hasDisplayableText(displayText)
-        ) {
-            return 'thinking';
-        }
-        return 'normal';
-    };
-
-    const isCompactSpacingPair = (previousKind, currentKind) => {
-        if (!previousKind || !currentKind) return false;
-        if (previousKind === 'tool' && currentKind === 'tool') return true;
-        return (
-            (previousKind === 'thinking' && currentKind === 'tool') ||
-            (previousKind === 'tool' && currentKind === 'thinking')
-        );
+        return getMessageSpacingKind({
+            kind: options.kind,
+            role,
+            thoughts: currentThoughts,
+            visibleText: getVisibleMessageText(),
+        });
     };
 
     const syncCompactSpacing = ({ skipNext = false } = {}) => {
-        if (!container.contains(div)) return;
-        const spacingKind = getSpacingKind();
-        div.dataset.messageSpacingKind = spacingKind;
-        div.classList.toggle('msg-thinking-only', spacingKind === 'thinking');
-
-        const previousKind = div.previousElementSibling?.dataset?.messageSpacingKind || '';
-        div.classList.toggle('msg-compact-chain', isCompactSpacingPair(previousKind, spacingKind));
-
-        if (skipNext) return;
-        const nextController = div.nextElementSibling?.__messageController;
-        if (nextController && typeof nextController.syncCompactSpacing === 'function') {
-            nextController.syncCompactSpacing({ skipNext: true });
-        }
+        syncMessageSpacing(container, div, getSpacingKind, { skipNext });
     };
 
     const syncCopyButton = () => {
@@ -163,115 +104,12 @@ export function appendMessage(
         }
     };
 
-    const getThoughtsCompleteLabel = () => {
-        if (thoughtsDurationSeconds !== null) {
-            return t('thoughtsCompleteWithDuration').replace(
-                '{seconds}',
-                formatThoughtDuration(thoughtsDurationSeconds)
-            );
-        }
-        return t('thoughtsComplete');
-    };
-
-    const getThoughtsStreamingLabel = () => {
-        if (!thoughtsStartedAt) return t('thoughtsStreaming');
-        const elapsedSeconds = (Date.now() - thoughtsStartedAt) / 1000;
-        return t('thoughtsCompleteWithDuration').replace(
-            '{seconds}',
-            formatThoughtDuration(elapsedSeconds)
-        );
-    };
-
-    const updateThoughtsStatus = (isStreaming) => {
-        if (!thoughtsStatus) return;
-        thoughtsStatus.textContent = isStreaming
-            ? getThoughtsStreamingLabel()
-            : getThoughtsCompleteLabel();
-    };
-
-    const stopThoughtsStatusTimer = () => {
-        if (!thoughtsStatusTimer) return;
-        clearInterval(thoughtsStatusTimer);
-        thoughtsStatusTimer = null;
-    };
-
-    const startThoughtsStatusTimer = () => {
-        if (thoughtsStatusTimer) return;
-        thoughtsStatusTimer = setInterval(() => {
-            if (thoughtsFinished) {
-                stopThoughtsStatusTimer();
-                return;
-            }
-            updateThoughtsStatus(true);
-        }, 1000);
-    };
-
-    const setThoughtsExpanded = (expanded) => {
-        if (!thoughtsToggle || !thoughtsContent || !thoughtsDiv) return;
-        expanded = Boolean(expanded);
-        thoughtsExpanded = expanded;
-        thoughtsDiv.classList.toggle('thoughts-expanded', expanded);
-        thoughtsToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-        thoughtsToggle.setAttribute(
-            'aria-label',
-            expanded ? t('thoughtsCollapse') : t('thoughtsExpand')
-        );
-        thoughtsContent.hidden = !expanded;
-    };
-
-    const setThoughtsVisible = (visible) => {
-        if (!thoughtsDiv) return;
-        thoughtsDiv.hidden = !visible;
-    };
-
-    const finishThoughts = () => {
-        if (thoughtsFinished) {
-            return;
-        }
-        thoughtsFinished = true;
-        thoughtsDurationSeconds = thoughtsStartedAt
-            ? (Date.now() - thoughtsStartedAt) / 1000
-            : (thoughtsDurationSeconds ?? 0);
-        stopThoughtsStatusTimer();
-        setThoughtsExpanded(false);
-    };
-
     const updateThoughts = (nextThoughts, state = {}) => {
-        if (!thoughtsContent) return;
-
         if (nextThoughts !== undefined) {
             currentThoughts = nextThoughts || '';
-            renderContent(thoughtsContent, currentThoughts, 'ai');
         }
 
-        const hasThoughts = hasDisplayableThoughts(currentThoughts);
-        setThoughtsVisible(hasThoughts);
-        if (!hasThoughts) {
-            stopThoughtsStatusTimer();
-            syncCompactSpacing();
-            return;
-        }
-
-        if (state.isFinal || state.hasDisplayableText) {
-            finishThoughts();
-            updateThoughtsStatus(false);
-            syncCompactSpacing();
-            return;
-        }
-
-        if (state.isStreaming && !thoughtsFinished) {
-            if (!thoughtsStartedAt) {
-                thoughtsStartedAt = getThoughtsStartedAtFromOptions(state) || Date.now();
-            }
-            updateThoughtsStatus(true);
-            startThoughtsStatusTimer();
-            setThoughtsExpanded(true);
-            syncCompactSpacing();
-            return;
-        }
-
-        stopThoughtsStatusTimer();
-        updateThoughtsStatus(false);
+        thoughtsController?.update(nextThoughts, state);
         syncCompactSpacing();
     };
 
@@ -279,40 +117,8 @@ export function appendMessage(
     if (currentText || currentThoughts || role === 'ai' || role === 'user') {
         // --- Thinking Process (Optional) ---
         if (role === 'ai') {
-            thoughtsDiv = document.createElement('div');
-            thoughtsDiv.className = 'thoughts-container';
-            thoughtsDiv.hidden = !hasDisplayableThoughts(currentThoughts);
-
-            const regionId = createPrefixedId(THOUGHTS_REGION_PREFIX);
-
-            thoughtsToggle = document.createElement('button');
-            thoughtsToggle.type = 'button';
-            thoughtsToggle.className = 'thoughts-toggle';
-            thoughtsToggle.setAttribute('aria-controls', regionId);
-
-            const arrow = document.createElement('span');
-            arrow.className = 'thoughts-arrow';
-            arrow.setAttribute('aria-hidden', 'true');
-            arrow.textContent = '›';
-
-            thoughtsStatus = document.createElement('span');
-            thoughtsStatus.className = 'thoughts-status';
-
-            thoughtsContent = document.createElement('div');
-            thoughtsContent.id = regionId;
-            thoughtsContent.className = 'thoughts-content';
-            renderContent(thoughtsContent, currentThoughts || '', 'ai');
-
-            thoughtsToggle.appendChild(arrow);
-            thoughtsToggle.appendChild(thoughtsStatus);
-            thoughtsToggle.addEventListener('click', () => {
-                setThoughtsExpanded(!thoughtsExpanded);
-            });
-
-            thoughtsDiv.appendChild(thoughtsToggle);
-            thoughtsDiv.appendChild(thoughtsContent);
-            div.appendChild(thoughtsDiv);
-            setThoughtsExpanded(options.isStreaming && hasDisplayableThoughts(currentThoughts));
+            thoughtsController = createThoughtsBlock(currentThoughts, options, syncCompactSpacing);
+            div.appendChild(thoughtsController.root);
             updateThoughts(undefined, {
                 isStreaming: options.isStreaming,
                 isFinal: options.isFinal,
@@ -423,15 +229,15 @@ export function appendMessage(
                 syncCopyButton();
             }
             if (Number.isFinite(state.thoughtsDurationSeconds)) {
-                thoughtsDurationSeconds = state.thoughtsDurationSeconds;
+                thoughtsController?.setDurationSeconds(state.thoughtsDurationSeconds);
             }
             updateThoughts(newThoughts, { isFinal: true });
             syncCompactSpacing();
         },
         syncCompactSpacing,
-        getThoughtsDurationSeconds: () => thoughtsDurationSeconds,
+        getThoughtsDurationSeconds: () => thoughtsController?.getDurationSeconds() ?? null,
         dispose: () => {
-            stopThoughtsStatusTimer();
+            thoughtsController?.dispose();
             editController?.cancel();
         },
         // Add generated images if they arrive after the text response.

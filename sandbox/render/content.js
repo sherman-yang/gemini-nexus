@@ -118,7 +118,7 @@ function getOutputPreview(text) {
         if (parsed !== null && typeof parsed === 'object') {
             return getReadableJsonFallbackPreview(trimmed);
         }
-    } catch (_) {
+    } catch {
         // Invalid JSON-like output is handled below.
     }
 
@@ -139,8 +139,8 @@ function getStructuredPreviewValue(value) {
     if (typeof value !== 'object') return value;
 
     if (Array.isArray(value)) {
-        for (const item of value) {
-            const preview = getStructuredPreviewValue(item);
+        for (const entry of value) {
+            const preview = getStructuredPreviewValue(entry);
             if (preview !== undefined) return preview;
         }
         return undefined;
