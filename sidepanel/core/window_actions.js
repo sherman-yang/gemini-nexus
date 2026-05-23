@@ -57,6 +57,9 @@ const WINDOW_MESSAGE_HANDLERS = {
     GET_CONNECTION_SETTINGS(payload, bridge) {
         bridge.restoreConnectionSettings();
     },
+    GET_SIDEBAR_EXPANDED(payload, bridge) {
+        bridge.restoreSidebarExpanded();
+    },
     SAVE_SESSIONS(payload, bridge) {
         bridge.saveSessionsSafely(payload);
     },
@@ -89,6 +92,9 @@ const WINDOW_MESSAGE_HANDLERS = {
     },
     SAVE_SIDEBAR_BEHAVIOR(payload, bridge) {
         bridge.state.save('geminiSidebarBehavior', payload);
+    },
+    SAVE_SIDEBAR_EXPANDED(payload, bridge) {
+        bridge.saveSidebarExpanded(payload);
     },
     SAVE_SIDE_PANEL_SCOPE(payload, bridge) {
         bridge.state.save('geminiSidePanelScope', payload);

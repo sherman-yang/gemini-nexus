@@ -1,5 +1,10 @@
-import { createWebModelOptionMarkup } from '../../../shared/models/web_models.js';
+import {
+    createWebModelOptionMarkup,
+    createWebModelOptions,
+} from '../../../shared/models/web_models.js';
 import { TemplateIcons } from './icons.js';
+
+const defaultModelLabel = createWebModelOptions()[0]?.label || '';
 
 export const HeaderTemplate = `
     <!-- HEADER -->
@@ -10,9 +15,15 @@ export const HeaderTemplate = `
             </button>
 
             <div class="model-select-wrapper">
-                <select id="model-select" data-i18n-title="modelSelectTooltip" title="Select Model (Tab to cycle)">
+                <select id="model-select" class="model-native-select" data-i18n-title="modelSelectTooltip" title="Select Model (Tab to cycle)" aria-hidden="true" tabindex="-1">
                     ${createWebModelOptionMarkup()}
                 </select>
+                <button id="model-picker-trigger" class="model-picker-trigger" type="button" data-i18n-title="modelSelectTooltip" title="Select Model (Tab to cycle)" aria-haspopup="listbox" aria-expanded="false" aria-controls="model-picker-listbox">
+                    <span class="model-picker-current">${defaultModelLabel}</span>
+                </button>
+                <div id="model-picker-menu" class="model-picker-menu" hidden>
+                    <div id="model-picker-listbox" class="model-picker-listbox" role="listbox"></div>
+                </div>
             </div>
         </div>
 

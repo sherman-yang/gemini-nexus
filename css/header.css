@@ -5,15 +5,15 @@
     right: 0;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    padding: 16px 40px 16px 20px;
+    align-items: center;
+    padding: 6px 12px 6px 8px;
     z-index: 10;
     pointer-events: none; /* Let clicks pass through empty space */
 }
 
 /* Wide Layout Overrides */
 body.layout-wide .header {
-    padding-left: 300px; /* Sidebar width + padding */
+    padding-left: calc(16.2rem + 12px);
 }
 
 body.layout-wide #history-toggle {
@@ -26,9 +26,9 @@ body.host-tab #open-full-page-btn {
 
 .browser-control-bar {
     position: absolute;
-    top: 58px;
-    left: 20px;
-    right: 52px;
+    top: 48px;
+    left: 8px;
+    right: 12px;
     z-index: 9;
     display: grid;
     grid-template-columns: minmax(0, 1fr) auto auto;
@@ -50,7 +50,15 @@ body.host-tab #open-full-page-btn {
 }
 
 body.layout-wide .browser-control-bar {
-    left: 300px;
+    left: calc(16.2rem + 12px);
+}
+
+body.layout-wide.sidebar-collapsed .header {
+    padding-left: calc(52.2px + 8px);
+}
+
+body.layout-wide.sidebar-collapsed .browser-control-bar {
+    left: calc(52.2px + 8px);
 }
 
 .browser-control-target {
@@ -263,13 +271,13 @@ body.layout-wide .browser-control-bar {
 .header-right {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     pointer-events: auto;
 }
 
 .header .icon-btn {
-    width: 33px;
-    height: 33px;
+    width: 36px;
+    height: 36px;
 }
 
 .header .icon-btn svg {
@@ -281,52 +289,186 @@ body.layout-wide .browser-control-bar {
 .model-select-wrapper {
     position: relative;
     pointer-events: auto;
+    display: inline-flex;
+    align-items: center;
 }
 
-#model-select {
-    appearance: none;
-    -webkit-appearance: none;
-    background: var(--icon-btn-bg);
-    backdrop-filter: blur(8px);
-    border: 1px solid var(--icon-btn-border);
-    border-radius: 16px;
-    height: 33px;
-    line-height: 31px; /* Center text vertically */
+.model-native-select {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.model-picker-trigger {
+    min-height: 36px;
+    max-width: min(220px, calc(100vw - 164px));
     padding: 0 12px;
-    font-size: 13px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    outline: none;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    font-family: inherit;
-    text-align: center;
-    max-width: 200px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font: inherit;
+    font-size: 16px;
+    font-weight: 650;
+    outline: none;
+    transition:
+        background-color 0.2s,
+        border-color 0.2s,
+        color 0.2s;
+}
+
+.model-picker-trigger:hover,
+.model-picker-trigger[aria-expanded='true'] {
+    background: var(--btn-hover);
+    border-color: var(--border-color);
+}
+
+.model-picker-trigger:focus-visible {
+    box-shadow:
+        0 0 0 2px var(--bg-primary),
+        0 0 0 4px var(--border-focus);
+}
+
+.model-picker-trigger:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.model-picker-current {
+    min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-#model-select:hover {
-    background: var(--icon-btn-hover);
-    color: var(--text-primary);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
+.model-picker-menu {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    width: min(320px, calc(100vw - 32px));
+    max-width: 320px;
+    max-height: min(384px, calc(100vh - 88px));
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-modal);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    z-index: 80;
 }
 
-#model-select:active {
-    transform: translateY(0);
+.model-picker-menu[hidden] {
+    display: none !important;
+}
+
+.model-picker-listbox {
+    max-height: calc(min(384px, calc(100vh - 88px)) - 12px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.model-picker-option {
+    width: 100%;
+    min-height: 54px;
+    padding: 8px 10px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    font: inherit;
+    text-align: left;
+    transition:
+        background-color 0.15s,
+        border-color 0.15s,
+        color 0.15s;
+}
+
+.model-picker-option:hover,
+.model-picker-option.is-active {
+    background: var(--btn-hover);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.model-picker-option.is-selected {
+    background: var(--btn-hover);
+    border-color: var(--border-color);
+    color: var(--primary);
+}
+
+.model-picker-option-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.model-picker-option-name {
+    max-width: 240px;
+    color: inherit;
+    font-size: 14px;
+    font-weight: 650;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.model-picker-option-id {
+    max-width: 240px;
+    color: var(--text-tertiary);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.model-picker-check {
+    width: 18px;
+    height: 18px;
+    margin-top: 2px;
+    flex: 0 0 18px;
+    color: var(--primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.model-picker-check svg {
+    width: 14px;
+    height: 14px;
 }
 
 @media (max-width: 600px) {
     .header {
-        padding: 16px;
+        padding: 6px 8px;
     }
 
     .header-right {
         position: fixed;
-        top: 16px;
-        right: 16px;
+        top: 6px;
+        right: 8px;
+    }
+
+    .model-picker-trigger {
+        max-width: calc(100vw - 188px);
+        min-height: 34px;
+        padding: 0 10px;
+        font-size: 14px;
     }
 }

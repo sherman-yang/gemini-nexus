@@ -60,6 +60,26 @@ describe('AppMessageBridge settings restore', () => {
         expect(app.handleIncomingMessage).not.toHaveBeenCalled();
     });
 
+    it('restores the persisted sidebar expanded state into the sidebar controller', () => {
+        const bridge = new AppMessageBridge();
+        const ui = {
+            settings: {},
+            sidebar: {
+                restoreSidebarExpanded: vi.fn(),
+            },
+        };
+        const app = {
+            handleIncomingMessage: vi.fn(),
+        };
+
+        bridge.setUI(ui);
+        bridge.setApp(app);
+        bridge.dispatch('RESTORE_SIDEBAR_EXPANDED', false, {});
+
+        expect(ui.sidebar.restoreSidebarExpanded).toHaveBeenCalledWith(false);
+        expect(app.handleIncomingMessage).not.toHaveBeenCalled();
+    });
+
     it('ignores non-object window messages', () => {
         const bridge = new AppMessageBridge();
         const app = {

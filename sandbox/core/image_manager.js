@@ -240,8 +240,10 @@ export class ImageManager {
             previewItem.className = 'preview-item';
 
             const removeButton = document.createElement('button');
+            removeButton.type = 'button';
             removeButton.className = 'preview-remove-btn';
             removeButton.textContent = '✕';
+            removeButton.setAttribute('aria-label', 'Remove attachment');
             removeButton.onclick = (clickEvent) => {
                 clickEvent.stopPropagation();
                 this.removeFile(index);

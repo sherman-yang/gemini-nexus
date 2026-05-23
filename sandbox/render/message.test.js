@@ -68,4 +68,32 @@ describe('appendMessage copy button', () => {
             'I will call a tool now.'
         );
     });
+
+    it('uses AMC-style rows, action rails, and content containers for normal messages', () => {
+        const container = document.createElement('div');
+
+        const aiController = appendMessage(container, 'Assistant answer', 'ai', null, '', null, {
+            autoScroll: false,
+        });
+        const userController = appendMessage(container, 'User question', 'user', null, '', null, {
+            autoScroll: false,
+            onEdit: vi.fn(),
+        });
+
+        const aiRow = aiController.div.querySelector(':scope > .msg-row');
+        expect(aiController.div.dataset.messageRole).toBe('model');
+        expect(aiRow?.children[0]?.classList.contains('message-action-rail')).toBe(true);
+        expect(aiRow?.children[1]?.classList.contains('message-content-container')).toBe(true);
+        expect(aiController.div.querySelector('.message-avatar-ai')).not.toBeNull();
+        expect(aiController.div.querySelector('.message-actions .copy-btn')).not.toBeNull();
+        expect(aiController.div.querySelector(':scope > .copy-btn')).toBeNull();
+
+        const userRow = userController.div.querySelector(':scope > .msg-row');
+        expect(userController.div.dataset.messageRole).toBe('user');
+        expect(userRow?.children[0]?.classList.contains('message-content-container')).toBe(true);
+        expect(userRow?.children[1]?.classList.contains('message-action-rail')).toBe(true);
+        expect(userController.div.querySelector('.message-avatar-user')).not.toBeNull();
+        expect(userController.div.querySelector('.message-actions .copy-btn')).not.toBeNull();
+        expect(userController.div.querySelector('.message-actions .edit-btn')).not.toBeNull();
+    });
 });

@@ -9,11 +9,16 @@ export class FrameManager {
         // Use localStorage for Theme/Lang to avoid waiting for async chrome.storage
         const cachedTheme = localStorage.getItem('geminiTheme') || 'system';
         const cachedLang = localStorage.getItem('geminiLanguage') || 'system';
+        const cachedSidebarExpanded = localStorage.getItem('geminiSidebarExpanded');
 
         const params = new URLSearchParams({
             theme: cachedTheme,
             lang: cachedLang,
         });
+
+        if (cachedSidebarExpanded === 'true' || cachedSidebarExpanded === 'false') {
+            params.set('sidebarExpanded', cachedSidebarExpanded);
+        }
 
         const sandboxPath = `sandbox/index.html?${params.toString()}`;
         const runtime = globalThis.chrome && globalThis.chrome.runtime;

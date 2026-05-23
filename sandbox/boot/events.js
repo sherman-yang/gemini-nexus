@@ -4,9 +4,17 @@ import { bindToolButtonEvents } from './tool_button_events.js';
 export { getToolsPageScrollDistance } from './tool_button_events.js';
 
 export function bindAppEvents(app, ui, setResizeRef) {
-    document
-        .getElementById('new-chat-header-btn')
-        .addEventListener('click', () => app.handleNewChat());
+    const newChatHeaderBtn = document.getElementById('new-chat-header-btn');
+    if (newChatHeaderBtn) {
+        newChatHeaderBtn.addEventListener('click', () => app.handleNewChat());
+    }
+
+    ['new-chat-sidebar-btn', 'collapsed-new-chat-btn'].forEach((buttonId) => {
+        const newChatSidebarBtn = document.getElementById(buttonId);
+        if (newChatSidebarBtn) {
+            newChatSidebarBtn.addEventListener('click', () => app.handleNewChat());
+        }
+    });
 
     const tabSwitcherBtn = document.getElementById('tab-switcher-btn');
     if (tabSwitcherBtn) {
@@ -20,12 +28,14 @@ export function bindAppEvents(app, ui, setResizeRef) {
         });
     }
 
-    const settingsBtn = document.getElementById('settings-btn');
-    if (settingsBtn) {
-        settingsBtn.addEventListener('click', () => {
-            window.parent.postMessage({ action: 'OPEN_SETTINGS_PAGE' }, '*');
-        });
-    }
+    ['settings-btn', 'collapsed-settings-btn'].forEach((buttonId) => {
+        const settingsBtn = document.getElementById(buttonId);
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', () => {
+                window.parent.postMessage({ action: 'OPEN_SETTINGS_PAGE' }, '*');
+            });
+        }
+    });
 
     bindToolButtonEvents(app, ui);
     bindInputEvents(app, ui, setResizeRef);

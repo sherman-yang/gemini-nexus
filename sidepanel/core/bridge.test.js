@@ -196,6 +196,49 @@ describe('MessageBridge model persistence', () => {
         );
     });
 
+    it('saves the sidebar expanded preference from the sandbox frame', () => {
+        const frame = createFrame();
+        const state = createState();
+        const bridge = new MessageBridge(frame, state);
+
+        bridge.handleWindowMessage({
+            source: frame.getWindow(),
+            data: {
+                action: 'SAVE_SIDEBAR_EXPANDED',
+                payload: false,
+            },
+        });
+
+        expect(state.save).toHaveBeenCalledWith('geminiSidebarExpanded', false);
+    });
+
+    it('restores the sidebar expanded preference on request', () => {
+        const frame = createFrame();
+        const state = createState();
+        const bridge = new MessageBridge(frame, state);
+        chrome.storage.local.get.mockImplementation((keys, callback) =>
+            callback({
+                geminiSidebarExpanded: false,
+            })
+        );
+
+        bridge.handleWindowMessage({
+            source: frame.getWindow(),
+            data: {
+                action: 'GET_SIDEBAR_EXPANDED',
+            },
+        });
+
+        expect(chrome.storage.local.get).toHaveBeenCalledWith(
+            ['geminiSidebarExpanded'],
+            expect.any(Function)
+        );
+        expect(frame.postMessage).toHaveBeenCalledWith({
+            action: 'RESTORE_SIDEBAR_EXPANDED',
+            payload: false,
+        });
+    });
+
     it('restores the text selection blacklist preference', () => {
         const frame = createFrame();
         const state = createState();

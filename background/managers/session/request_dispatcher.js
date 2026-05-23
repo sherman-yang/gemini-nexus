@@ -8,6 +8,7 @@ import {
 import {
     describeMessageAttachmentMarkers,
     getAttachmentDataUrls,
+    getImageAttachmentDataUrls,
     normalizeMessageImages,
 } from '../../../shared/attachments/index.js';
 import { getHistory } from './history_store.js';
@@ -30,6 +31,18 @@ function getMessageAttachmentDataUrls(message) {
         return getAttachmentDataUrls(message.attachments);
     }
     return normalizeMessageImages(message?.image);
+}
+
+function hasImageAttachments(files) {
+    return getImageAttachmentDataUrls(files).length > 0;
+}
+
+function suppressWebImageEchoes(response, files) {
+    if (!hasImageAttachments(files)) return response;
+    return {
+        ...response,
+        images: [],
+    };
 }
 
 function arraysEqual(left, right) {
@@ -345,7 +358,7 @@ export class RequestDispatcher {
                 // Success! Update auth state
                 await this.auth.updateContext(response.newContext, request.model);
 
-                return createSuccessReply(request, response, {
+                return createSuccessReply(request, suppressWebImageEchoes(response, files), {
                     sources: [],
                     context: null,
                 });

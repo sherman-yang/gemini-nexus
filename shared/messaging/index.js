@@ -114,6 +114,20 @@ export function saveSidebarBehaviorToStorage(behavior) {
     );
 }
 
+export function requestSidebarExpandedFromStorage() {
+    window.parent.postMessage({ action: 'GET_SIDEBAR_EXPANDED' }, '*');
+}
+
+export function saveSidebarExpandedToStorage(isExpanded) {
+    window.parent.postMessage(
+        {
+            action: 'SAVE_SIDEBAR_EXPANDED',
+            payload: Boolean(isExpanded),
+        },
+        '*'
+    );
+}
+
 export function saveSidePanelScopeToStorage(scope) {
     window.parent.postMessage(
         {

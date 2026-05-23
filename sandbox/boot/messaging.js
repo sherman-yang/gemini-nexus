@@ -96,6 +96,12 @@ export class AppMessageBridge {
             this.ui.settings.updateAccountIndices(payload);
             return;
         }
+        if (action === 'RESTORE_SIDEBAR_EXPANDED') {
+            if (typeof this.ui.sidebar?.restoreSidebarExpanded === 'function') {
+                this.ui.sidebar.restoreSidebarExpanded(payload);
+            }
+            return;
+        }
         if (action === 'RESTORE_APP_VERSION') {
             this.ui.settings.updateAppVersion(payload);
             return;

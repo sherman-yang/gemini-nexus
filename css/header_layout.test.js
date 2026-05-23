@@ -1,0 +1,33 @@
+import { describe, expect, it } from 'vitest';
+import { readFile } from 'node:fs/promises';
+
+const readCss = (file) => readFile(new URL(`./${file}`, import.meta.url), 'utf8');
+
+describe('header layout styles', () => {
+    it('keeps the top header compact like AMC instead of leaving large edge padding', async () => {
+        const headerCss = await readCss('header.css');
+
+        expect(headerCss).toMatch(/\.header\s*{[^}]*padding:\s*6px 12px 6px 8px/s);
+        expect(headerCss).toMatch(
+            /body\.layout-wide\s+\.header\s*{[^}]*padding-left:\s*calc\(16\.2rem \+ 12px\)/s
+        );
+        expect(headerCss).toMatch(
+            /body\.layout-wide\.sidebar-collapsed\s+\.header\s*{[^}]*padding-left:\s*calc\(52\.2px \+ 8px\)/s
+        );
+        expect(headerCss).toMatch(/\.header \.icon-btn\s*{[^}]*width:\s*36px/s);
+        expect(headerCss).not.toContain('padding: 16px 40px 16px 20px');
+    });
+
+    it('styles the model selector like the AMC custom picker instead of a native pill select', async () => {
+        const headerCss = await readCss('header.css');
+
+        expect(headerCss).toMatch(/\.model-picker-trigger\s*{[^}]*min-height:\s*36px/s);
+        expect(headerCss).toMatch(/\.model-picker-trigger\s*{[^}]*border-radius:\s*12px/s);
+        expect(headerCss).toMatch(/\.model-picker-menu\s*{[^}]*position:\s*absolute/s);
+        expect(headerCss).toMatch(/\.model-picker-menu\s*{[^}]*max-width:\s*320px/s);
+        expect(headerCss).toMatch(/\.model-picker-option\s*{[^}]*min-height:\s*54px/s);
+        expect(headerCss).toMatch(/\.model-picker-option-id\s*{[^}]*font-family:\s*ui-monospace/s);
+        expect(headerCss).toMatch(/\.model-native-select\s*{[^}]*position:\s*absolute/s);
+        expect(headerCss).not.toContain('#model-select:hover');
+    });
+});

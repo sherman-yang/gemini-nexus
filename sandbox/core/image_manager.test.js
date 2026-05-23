@@ -37,4 +37,15 @@ describe('ImageManager', () => {
         expect(card.querySelector('img')).toBeNull();
         expect(card.querySelector('span').textContent).toBe('<img src=x onerror=alert(1)>spec.pdf');
     });
+
+    it('renders preview remove controls as accessible composer buttons', () => {
+        const manager = createHarness();
+
+        manager.addFile('data:image/png;base64,AAAA', 'image/png', 'sample.png');
+
+        const removeButton = document.querySelector('.preview-remove-btn');
+        expect(removeButton.tagName).toBe('BUTTON');
+        expect(removeButton.type).toBe('button');
+        expect(removeButton.getAttribute('aria-label')).toBe('Remove attachment');
+    });
 });

@@ -38,6 +38,10 @@ export function createInitialRestoreMessages(localStorageData, { theme, language
                 payload: localStorageData.geminiSidebarBehavior || 'auto',
             },
             {
+                action: 'RESTORE_SIDEBAR_EXPANDED',
+                payload: localStorageData.geminiSidebarExpanded !== false,
+            },
+            {
                 action: 'RESTORE_CONTEXT_SETTINGS',
                 payload: createContextRestorePayload(localStorageData),
             },
@@ -113,6 +117,13 @@ export function createLocalStorageRestoreMessages(localStorageData, changedKeys)
         messages.push({
             action: 'RESTORE_SIDEBAR_BEHAVIOR',
             payload: localStorageData.geminiSidebarBehavior || 'auto',
+        });
+    }
+
+    if (hasChanged('geminiSidebarExpanded')) {
+        messages.push({
+            action: 'RESTORE_SIDEBAR_EXPANDED',
+            payload: localStorageData.geminiSidebarExpanded !== false,
         });
     }
 

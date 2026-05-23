@@ -32,6 +32,19 @@ describe('FrameManager', () => {
         );
     });
 
+    it('passes the cached sidebar expanded state to the sandbox URL', () => {
+        localStorage.setItem('geminiTheme', 'dark');
+        localStorage.setItem('geminiLanguage', 'zh-CN');
+        localStorage.setItem('geminiSidebarExpanded', 'false');
+
+        const manager = new FrameManager();
+        manager.init();
+
+        expect(chrome.runtime.getURL).toHaveBeenCalledWith(
+            'sandbox/index.html?theme=dark&lang=zh-CN&sidebarExpanded=false'
+        );
+    });
+
     it('falls back to the local sandbox URL when chrome.runtime is unavailable', () => {
         delete globalThis.chrome;
         localStorage.setItem('geminiTheme', 'light');

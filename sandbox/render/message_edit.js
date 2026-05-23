@@ -4,6 +4,7 @@ import { TemplateIcons } from '../ui/templates/icons.js';
 export function createMessageEditControl({
     messageEl,
     contentEl,
+    editorHost = messageEl,
     getCopyButton,
     getCurrentText,
     onEdit,
@@ -55,7 +56,13 @@ export function createMessageEditControl({
         actions.appendChild(saveBtn);
         editor.appendChild(textarea);
         editor.appendChild(actions);
-        messageEl.insertBefore(editor, getCopyButton() || editBtn);
+
+        const fallbackReference = getCopyButton() || editBtn;
+        if (fallbackReference?.parentNode === editorHost) {
+            editorHost.insertBefore(editor, fallbackReference);
+        } else {
+            editorHost.appendChild(editor);
+        }
 
         const cleanup = () => {
             document.removeEventListener('pointerdown', handleOutsidePointer, true);

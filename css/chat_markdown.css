@@ -6,6 +6,13 @@
     margin-bottom: 0;
 }
 
+.message-content-container .msg-content {
+    max-width: 100%;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
 .msg-content a {
     color: var(--primary);
     text-decoration-color: color-mix(in srgb, var(--primary) 55%, transparent);

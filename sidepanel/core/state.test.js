@@ -59,6 +59,7 @@ function setupChromeWithLocalData(localData, activeTabId = 33) {
 describe('StateManager tab ownership', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        localStorage.clear();
         window.history.replaceState(null, '', '/sidepanel/index.html');
     });
 
@@ -144,6 +145,52 @@ describe('StateManager tab ownership', () => {
             action: 'RESTORE_TEXT_SELECTION_BLACKLIST',
             payload: 'github.com\n*.google.com',
         });
+    });
+
+    it('restores the persisted collapsed sidebar state during initialization', () => {
+        setupChromeWithLocalData({
+            geminiSidebarExpanded: false,
+        });
+        const frame = createFrame();
+        const manager = new StateManager(frame);
+
+        manager.init();
+        manager.markUiReady();
+
+        expect(chrome.storage.local.get).toHaveBeenCalledWith(
+            expect.arrayContaining(['geminiSidebarExpanded']),
+            expect.any(Function)
+        );
+        expect(frame.postMessage).toHaveBeenCalledWith({
+            action: 'RESTORE_SIDEBAR_EXPANDED',
+            payload: false,
+        });
+        expect(localStorage.getItem('geminiSidebarExpanded')).toBe('false');
+    });
+
+    it('forwards sidebar expanded storage changes to the sandbox after initialization', () => {
+        const listeners = setupChromeWithLocalData({
+            geminiSidebarExpanded: true,
+        });
+        const frame = createFrame();
+        const manager = new StateManager(frame);
+
+        manager.init();
+        manager.markUiReady();
+        frame.postMessage.mockClear();
+
+        listeners.storageChanged(
+            {
+                geminiSidebarExpanded: { oldValue: true, newValue: false },
+            },
+            'local'
+        );
+
+        expect(frame.postMessage).toHaveBeenCalledWith({
+            action: 'RESTORE_SIDEBAR_EXPANDED',
+            payload: false,
+        });
+        expect(localStorage.getItem('geminiSidebarExpanded')).toBe('false');
     });
 
     it('forwards local settings changes saved by the standalone settings page', () => {

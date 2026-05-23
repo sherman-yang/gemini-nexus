@@ -7,6 +7,8 @@ import { cleanupStructuredSourceText, createSourcesElement } from './sources.js'
 import { createThoughtsBlock } from './thoughts_block.js';
 import { hasDisplayableText } from '../core/displayable_content.js';
 
+const ASSISTANT_AVATAR_SRC = new URL('../../assets/assistant-avatar.png', import.meta.url).href;
+
 // Appends a message to the chat history and returns an update controller
 // attachment can be:
 // - string: single user image (URL/Base64)
@@ -23,9 +25,31 @@ export function appendMessage(
 ) {
     const messageElement = document.createElement('div');
     messageElement.className = `msg ${role}`;
+    messageElement.dataset.messageRole = role === 'ai' ? 'model' : role;
     if (options.kind) messageElement.classList.add(`msg-${options.kind}`);
     if (options.toolOutputKey) messageElement.dataset.toolOutputKey = options.toolOutputKey;
     if (options.toolStatusKey) messageElement.dataset.toolStatusKey = options.toolStatusKey;
+    const isNormalMessage = !isToolMessageKind(options.kind);
+    const contentHost = isNormalMessage ? document.createElement('div') : messageElement;
+    let actionsHost = null;
+
+    if (isNormalMessage) {
+        const row = document.createElement('div');
+        row.className = 'msg-row';
+
+        contentHost.className = 'message-content-container';
+        actionsHost = createMessageActionRail(role);
+
+        if (role === 'user') {
+            row.appendChild(contentHost);
+            row.appendChild(actionsHost);
+        } else {
+            row.appendChild(actionsHost);
+            row.appendChild(contentHost);
+        }
+
+        messageElement.appendChild(row);
+    }
 
     let currentText = text || '';
     let currentThoughts = thoughts || '';
@@ -34,7 +58,7 @@ export function appendMessage(
     if (role === 'user' && attachment) {
         const imagesContainer = createUserImagesGrid(attachment);
         if (imagesContainer) {
-            messageElement.appendChild(imagesContainer);
+            contentHost.appendChild(imagesContainer);
         }
     }
 
@@ -94,7 +118,7 @@ export function appendMessage(
         const shouldShowCopy = hasCopyableMessageText();
         if (shouldShowCopy && !copyBtn) {
             copyBtn = createCopyButton(getCopyText);
-            messageElement.appendChild(copyBtn);
+            getMessageActionsHost()?.appendChild(copyBtn);
             return;
         }
         if (!shouldShowCopy && copyBtn) {
@@ -117,7 +141,7 @@ export function appendMessage(
         // --- Thinking Process (Optional) ---
         if (role === 'ai') {
             thoughtsController = createThoughtsBlock(currentThoughts, options, syncCompactSpacing);
-            messageElement.appendChild(thoughtsController.root);
+            contentHost.appendChild(thoughtsController.root);
             updateThoughts(undefined, {
                 isStreaming: options.isStreaming,
                 isFinal: options.isFinal,
@@ -127,19 +151,19 @@ export function appendMessage(
         contentDiv = document.createElement('div');
         contentDiv.className = 'msg-content';
         renderMessageContent();
-        messageElement.appendChild(contentDiv);
+        contentHost.appendChild(contentDiv);
 
         if (role === 'ai' && Array.isArray(sources) && sources.length > 0) {
             sourcesDiv = createSourcesElement(sources);
             if (sourcesDiv) {
-                messageElement.appendChild(sourcesDiv);
+                contentHost.appendChild(sourcesDiv);
             }
         }
 
         // AI-generated images are distinct from user attachments.
         if (role === 'ai') {
             const grid = createGeneratedImagesGrid(attachment);
-            if (grid) messageElement.appendChild(grid);
+            if (grid) contentHost.appendChild(grid);
         }
 
         syncCopyButton();
@@ -153,12 +177,13 @@ export function appendMessage(
             editController = createMessageEditControl({
                 messageEl: messageElement,
                 contentEl: contentDiv,
+                editorHost: contentHost,
                 getCopyButton: () => copyBtn,
                 getCurrentText: () => currentText,
                 onEdit: options.onEdit,
             });
 
-            messageElement.appendChild(editController.button);
+            getMessageActionsHost()?.appendChild(editController.button);
         }
     }
 
@@ -243,12 +268,12 @@ export function appendMessage(
             if (
                 Array.isArray(images) &&
                 images.length > 0 &&
-                !messageElement.querySelector('.generated-images-grid')
+                !contentHost.querySelector('.generated-images-grid')
             ) {
                 const grid = createGeneratedImagesGrid(images);
                 if (!grid) return;
 
-                messageElement.insertBefore(grid, messageElement.querySelector('.copy-btn'));
+                contentHost.appendChild(grid);
             }
         },
         addSources: (sourceList) => {
@@ -262,14 +287,47 @@ export function appendMessage(
             if (!builtSources) return;
 
             sourcesDiv = builtSources;
-            const copyBtn = messageElement.querySelector('.copy-btn');
-            if (copyBtn) {
-                messageElement.insertBefore(sourcesDiv, copyBtn);
-            } else {
-                messageElement.appendChild(sourcesDiv);
-            }
+            contentHost.appendChild(sourcesDiv);
         },
     };
     messageElement.__messageController = controller;
     return controller;
+
+    function getMessageActionsHost() {
+        return actionsHost?.querySelector('.message-actions') || messageElement;
+    }
+}
+
+function createMessageActionRail(role) {
+    const rail = document.createElement('div');
+    rail.className = 'message-action-rail';
+
+    const avatar = document.createElement('div');
+    avatar.className = `message-avatar message-avatar-${role === 'ai' ? 'ai' : 'user'}`;
+    avatar.setAttribute('aria-hidden', 'true');
+
+    if (role === 'ai') {
+        const image = document.createElement('img');
+        image.src = ASSISTANT_AVATAR_SRC;
+        image.alt = '';
+        image.width = 29;
+        image.height = 29;
+        avatar.appendChild(image);
+    } else {
+        avatar.innerHTML = `
+            <svg viewBox="0 0 24 24" width="29" height="29" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M20 21a8 8 0 0 0-16 0"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+        `;
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'message-actions';
+
+    rail.appendChild(avatar);
+    rail.appendChild(actions);
+    return rail;
 }

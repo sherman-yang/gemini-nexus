@@ -135,6 +135,19 @@ export class MessageBridge {
         });
     }
 
+    restoreSidebarExpanded() {
+        chrome.storage.local.get(['geminiSidebarExpanded'], (result) => {
+            this.frame.postMessage({
+                action: 'RESTORE_SIDEBAR_EXPANDED',
+                payload: result.geminiSidebarExpanded !== false,
+            });
+        });
+    }
+
+    saveSidebarExpanded(payload) {
+        this.state.save('geminiSidebarExpanded', payload !== false);
+    }
+
     saveSelectedModel(payload) {
         const model = getModelSaveValue(payload);
         if (typeof model === 'string' && model.trim()) {

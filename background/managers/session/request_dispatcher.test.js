@@ -237,6 +237,57 @@ describe('RequestDispatcher response mapping', () => {
         });
     });
 
+    it('drops Gemini Web image echoes when the current request includes image attachments', async () => {
+        const echoedInputImage = { url: 'https://lh3.googleusercontent.com/uploaded-input' };
+        sendWebMessage.mockResolvedValue({
+            text: 'web text',
+            thoughts: null,
+            images: [echoedInputImage],
+            newContext: { atValue: 'new-at-token' },
+        });
+        const auth = {
+            accountIndices: [0],
+            getOrFetchContext: vi.fn(async () => ({ atValue: 'at-token' })),
+            updateContext: vi.fn(),
+        };
+        const dispatcher = new RequestDispatcher(auth);
+        const files = [
+            {
+                name: 'image.png',
+                type: 'image/png',
+                base64: 'data:image/png;base64,AAAA',
+            },
+        ];
+
+        await expect(
+            dispatcher.dispatch(
+                { text: 'what is this?', model: 'gemini-web', sessionId: 'session-web' },
+                { provider: 'web' },
+                files,
+                vi.fn(),
+                null
+            )
+        ).resolves.toEqual({
+            action: 'GEMINI_REPLY',
+            sessionId: 'session-web',
+            text: 'web text',
+            thoughts: null,
+            sources: [],
+            images: [],
+            status: 'success',
+            context: null,
+        });
+
+        expect(sendWebMessage).toHaveBeenCalledWith(
+            'what is this?',
+            expect.any(Object),
+            'gemini-web',
+            files,
+            null,
+            expect.any(Function)
+        );
+    });
+
     it('sends web requests with explicit local history and resets native context ids', async () => {
         getHistory.mockResolvedValue([
             { role: 'user', text: 'Remember code ALPHA.' },

@@ -1,7 +1,9 @@
 import { resizeSelectToSelectedOption } from '../ui/model_select_width.js';
+import { initModelPicker, syncModelPicker } from '../ui/model_picker.js';
 
 function bindModelSelect(app, ui, setResizeRef) {
     const modelSelect = document.getElementById('model-select');
+    const modelPicker = initModelPicker(modelSelect);
     let resizeModelSelectFrame = null;
     const resizeModelSelect = () => {
         if (resizeModelSelectFrame !== null) return;
@@ -15,6 +17,7 @@ function bindModelSelect(app, ui, setResizeRef) {
             }
 
             resizeSelectToSelectedOption(modelSelect);
+            syncModelPicker(modelSelect);
         });
     };
 
@@ -23,6 +26,7 @@ function bindModelSelect(app, ui, setResizeRef) {
     if (modelSelect) {
         modelSelect.addEventListener('change', (changeEvent) => {
             app.handleModelChange(changeEvent.target.value);
+            modelPicker?.sync();
             resizeModelSelect();
         });
         setTimeout(resizeModelSelect, 50);

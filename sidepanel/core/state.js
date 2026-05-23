@@ -14,6 +14,10 @@ export function getOwnerTabIdFromLocation(locationLike = window.location) {
     }
 }
 
+function cacheSidebarExpandedPreference(isExpanded) {
+    localStorage.setItem('geminiSidebarExpanded', isExpanded === false ? 'false' : 'true');
+}
+
 export class StateManager {
     constructor(frameManager) {
         this.frame = frameManager;
@@ -34,6 +38,7 @@ export class StateManager {
                 'geminiShortcuts',
                 'pendingImage',
                 'geminiSidebarBehavior',
+                'geminiSidebarExpanded',
                 'geminiSidePanelScope',
                 'geminiTextSelectionEnabled',
                 'geminiTextSelectionBlacklist',
@@ -137,6 +142,7 @@ export class StateManager {
             language: localStorage.getItem('geminiLanguage') || 'system',
             appVersion: `v${chrome.runtime.getManifest().version}`,
         });
+        cacheSidebarExpandedPreference(this.localStorageData.geminiSidebarExpanded);
 
         restoreMessages.beforeTabContext.forEach((message) => this.frame.postMessage(message));
         this.postCurrentTabContext();
@@ -197,6 +203,9 @@ export class StateManager {
                 this.localStorageData.geminiLanguage || 'system'
             );
         }
+        if (Object.prototype.hasOwnProperty.call(changes, 'geminiSidebarExpanded')) {
+            cacheSidebarExpandedPreference(this.localStorageData.geminiSidebarExpanded);
+        }
 
         createLocalStorageRestoreMessages(this.localStorageData, changedKeys).forEach((message) =>
             this.frame.postMessage(message)
@@ -216,6 +225,7 @@ export class StateManager {
 
         if (key === 'geminiTheme') localStorage.setItem('geminiTheme', value);
         if (key === 'geminiLanguage') localStorage.setItem('geminiLanguage', value);
+        if (key === 'geminiSidebarExpanded') cacheSidebarExpandedPreference(value);
     }
 
     getCurrentTabId() {

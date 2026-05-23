@@ -5,9 +5,13 @@ import { ViewerController } from './viewer.js';
 import { TabSelectorController } from './tab_selector.js';
 import { createModelOptions, getPreferredModel } from './model_options.js';
 import { resizeSelectToSelectedOption } from './model_select_width.js';
+import { syncModelPicker } from './model_picker.js';
 
 export class UIController {
     constructor(elements) {
+        this.layoutResizeFrame = null;
+        this.checkLayout();
+
         this.chat = new ChatController(elements);
 
         this.sidebar = new SidebarController(elements, {
@@ -33,19 +37,21 @@ export class UIController {
         this.sendBtn = this.chat.sendBtn;
         this.modelSelect = elements.modelSelect;
         this.tabSwitcherBtn = document.getElementById('tab-switcher-btn');
-        this.layoutResizeFrame = null;
-
-        this.checkLayout();
         window.addEventListener('resize', () => this.scheduleLayoutCheck());
     }
 
     checkLayout() {
         // Threshold for Wide Mode (e.g. Full Page Tab or large side panel)
         const isWide = window.innerWidth > 800;
+        const wasWide = document.body.classList.contains('layout-wide');
         if (isWide) {
             document.body.classList.add('layout-wide');
         } else {
             document.body.classList.remove('layout-wide');
+        }
+
+        if (this.sidebar && wasWide !== isWide) {
+            this.sidebar.handleLayoutModeChange(isWide);
         }
     }
 
@@ -92,6 +98,7 @@ export class UIController {
 
     resizeModelSelect() {
         resizeSelectToSelectedOption(this.modelSelect);
+        syncModelPicker(this.modelSelect);
     }
 
     updateStatus(text) {
