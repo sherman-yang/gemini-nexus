@@ -3,10 +3,10 @@ import { formatT, t } from '../../../core/i18n.js';
 const UNGROUPED_TOOLS_KEY = '(other)';
 
 function createHelpText(text) {
-    const div = document.createElement('div');
-    div.className = 'mcp-tool-help-text';
-    div.textContent = text;
-    return div;
+    const helpTextElement = document.createElement('div');
+    helpTextElement.className = 'mcp-tool-help-text';
+    helpTextElement.textContent = text;
+    return helpTextElement;
 }
 
 export function getMcpToolsSummaryText({ server, tools, toolMode, enabledSet }) {
@@ -48,14 +48,18 @@ export function groupMcpTools(tools, search = '') {
     }
 
     return Array.from(groups.keys())
-        .sort((a, b) => {
-            if (a === UNGROUPED_TOOLS_KEY) return 1;
-            if (b === UNGROUPED_TOOLS_KEY) return -1;
-            return a.localeCompare(b);
+        .sort((leftGroupName, rightGroupName) => {
+            if (leftGroupName === UNGROUPED_TOOLS_KEY) return 1;
+            if (rightGroupName === UNGROUPED_TOOLS_KEY) return -1;
+            return leftGroupName.localeCompare(rightGroupName);
         })
         .map((name) => ({
             name,
-            tools: groups.get(name).sort((a, b) => (a.name || '').localeCompare(b.name || '')),
+            tools: groups
+                .get(name)
+                .sort((leftTool, rightTool) =>
+                    (leftTool.name || '').localeCompare(rightTool.name || '')
+                ),
         }));
 }
 

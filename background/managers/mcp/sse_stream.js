@@ -10,12 +10,12 @@ export async function readSseStream(
     let dataLines = [];
 
     const dispatch = () => {
-        const data = dataLines.join('\n');
+        const eventData = dataLines.join('\n');
         const type = eventType || 'message';
         eventType = 'message';
         dataLines = [];
 
-        const payload = data.trim();
+        const payload = eventData.trim();
         if (!payload) return;
 
         if (type === 'endpoint') {
@@ -39,8 +39,8 @@ export async function readSseStream(
 
         if (type === 'message' || type === 'mcp' || type === 'data') {
             try {
-                const msg = JSON.parse(payload);
-                resolvePendingRpcMessage(msg);
+                const rpcMessage = JSON.parse(payload);
+                resolvePendingRpcMessage(rpcMessage);
             } catch {}
         }
     };

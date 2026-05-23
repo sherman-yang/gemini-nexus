@@ -11,7 +11,7 @@ import { hasDisplayableText } from '../core/displayable_content.js';
 // attachment can be:
 // - string: single user image (URL/Base64)
 // - array of strings: multiple user images
-// - array of objects {url, alt}: AI generated images
+// - array of objects {url, alt}: generated-image objects
 export function appendMessage(
     container,
     text,
@@ -21,13 +21,12 @@ export function appendMessage(
     sources = null,
     options = {}
 ) {
-    const div = document.createElement('div');
-    div.className = `msg ${role}`;
-    if (options.kind) div.classList.add(`msg-${options.kind}`);
-    if (options.toolOutputKey) div.dataset.toolOutputKey = options.toolOutputKey;
-    if (options.toolStatusKey) div.dataset.toolStatusKey = options.toolStatusKey;
+    const messageElement = document.createElement('div');
+    messageElement.className = `msg ${role}`;
+    if (options.kind) messageElement.classList.add(`msg-${options.kind}`);
+    if (options.toolOutputKey) messageElement.dataset.toolOutputKey = options.toolOutputKey;
+    if (options.toolStatusKey) messageElement.dataset.toolStatusKey = options.toolStatusKey;
 
-    // Store current text state
     let currentText = text || '';
     let currentThoughts = thoughts || '';
 
@@ -35,7 +34,7 @@ export function appendMessage(
     if (role === 'user' && attachment) {
         const imagesContainer = createUserImagesGrid(attachment);
         if (imagesContainer) {
-            div.appendChild(imagesContainer);
+            messageElement.appendChild(imagesContainer);
         }
     }
 
@@ -88,14 +87,14 @@ export function appendMessage(
     };
 
     const syncCompactSpacing = ({ skipNext = false } = {}) => {
-        syncMessageSpacing(container, div, getSpacingKind, { skipNext });
+        syncMessageSpacing(container, messageElement, getSpacingKind, { skipNext });
     };
 
     const syncCopyButton = () => {
         const shouldShowCopy = hasCopyableMessageText();
         if (shouldShowCopy && !copyBtn) {
             copyBtn = createCopyButton(getCopyText);
-            div.appendChild(copyBtn);
+            messageElement.appendChild(copyBtn);
             return;
         }
         if (!shouldShowCopy && copyBtn) {
@@ -118,7 +117,7 @@ export function appendMessage(
         // --- Thinking Process (Optional) ---
         if (role === 'ai') {
             thoughtsController = createThoughtsBlock(currentThoughts, options, syncCompactSpacing);
-            div.appendChild(thoughtsController.root);
+            messageElement.appendChild(thoughtsController.root);
             updateThoughts(undefined, {
                 isStreaming: options.isStreaming,
                 isFinal: options.isFinal,
@@ -128,19 +127,19 @@ export function appendMessage(
         contentDiv = document.createElement('div');
         contentDiv.className = 'msg-content';
         renderMessageContent();
-        div.appendChild(contentDiv);
+        messageElement.appendChild(contentDiv);
 
         if (role === 'ai' && Array.isArray(sources) && sources.length > 0) {
             sourcesDiv = createSourcesElement(sources);
             if (sourcesDiv) {
-                div.appendChild(sourcesDiv);
+                messageElement.appendChild(sourcesDiv);
             }
         }
 
         // AI-generated images are distinct from user attachments.
         if (role === 'ai') {
             const grid = createGeneratedImagesGrid(attachment);
-            if (grid) div.appendChild(grid);
+            if (grid) messageElement.appendChild(grid);
         }
 
         syncCopyButton();
@@ -152,18 +151,18 @@ export function appendMessage(
             typeof options.onEdit === 'function'
         ) {
             editController = createMessageEditControl({
-                messageEl: div,
+                messageEl: messageElement,
                 contentEl: contentDiv,
                 getCopyButton: () => copyBtn,
                 getCurrentText: () => currentText,
                 onEdit: options.onEdit,
             });
 
-            div.appendChild(editController.button);
+            messageElement.appendChild(editController.button);
         }
     }
 
-    container.appendChild(div);
+    container.appendChild(messageElement);
     syncCompactSpacing();
 
     // --- Scroll Logic ---
@@ -173,7 +172,7 @@ export function appendMessage(
     // final scroll position after all messages are rebuilt.
     if (options.autoScroll !== false) {
         setTimeout(() => {
-            const topPos = div.offsetTop - 20; // 20px padding context
+            const topPos = messageElement.offsetTop - 20; // 20px padding context
             container.scrollTo({
                 top: topPos,
                 behavior: 'smooth',
@@ -182,7 +181,7 @@ export function appendMessage(
     }
 
     const controller = {
-        div,
+        div: messageElement,
         update: (newText, newThoughts, state = {}) => {
             if (newText !== undefined) {
                 currentText = newText;
@@ -240,19 +239,16 @@ export function appendMessage(
             thoughtsController?.dispose();
             editController?.cancel();
         },
-        // Add generated images if they arrive after the text response.
         addImages: (images) => {
             if (
                 Array.isArray(images) &&
                 images.length > 0 &&
-                !div.querySelector('.generated-images-grid')
+                !messageElement.querySelector('.generated-images-grid')
             ) {
                 const grid = createGeneratedImagesGrid(images);
                 if (!grid) return;
 
-                // Insert before copy button
-                div.insertBefore(grid, div.querySelector('.copy-btn'));
-                // Do not force scroll here either
+                messageElement.insertBefore(grid, messageElement.querySelector('.copy-btn'));
             }
         },
         addSources: (sourceList) => {
@@ -266,14 +262,14 @@ export function appendMessage(
             if (!builtSources) return;
 
             sourcesDiv = builtSources;
-            const copyBtn = div.querySelector('.copy-btn');
+            const copyBtn = messageElement.querySelector('.copy-btn');
             if (copyBtn) {
-                div.insertBefore(sourcesDiv, copyBtn);
+                messageElement.insertBefore(sourcesDiv, copyBtn);
             } else {
-                div.appendChild(sourcesDiv);
+                messageElement.appendChild(sourcesDiv);
             }
         },
     };
-    div.__messageController = controller;
+    messageElement.__messageController = controller;
     return controller;
 }

@@ -339,13 +339,10 @@ export function renderContent(contentDiv, text, role, options = {}) {
         return;
     }
 
-    // Render Markdown and Math for AI responses
     if (role === 'ai') {
-        // Use shared pipeline
         const html = transformMarkdown(text);
         contentDiv.innerHTML = html;
 
-        // Render Math (KaTeX Auto-render extension)
         // This processes the specific DOM element after HTML insertion
         if (typeof renderMathInElement !== 'undefined') {
             renderMathInElement(contentDiv, {

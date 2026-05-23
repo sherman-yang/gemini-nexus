@@ -4,8 +4,8 @@
     const STYLES = window.GeminiToolbarStyles || '';
     const WEB_MODEL_OPTIONS = window.GeminiWebModels.createOptionMarkup();
 
-    function buildTranslationTargetOptions(t) {
-        const options = t.translationTargetOptions || [];
+    function buildTranslationTargetOptions(toolbarStrings) {
+        const options = toolbarStrings.translationTargetOptions || [];
         return options
             .map(
                 (option) => `
@@ -21,25 +21,26 @@
             .join('');
     }
 
-    function getDefaultTranslationTargetLabel(t) {
+    function getDefaultTranslationTargetLabel(toolbarStrings) {
         return (
-            (t.translationTargetOptions || []).find((option) => option.value === 'auto')?.label ||
-            'Auto'
+            (toolbarStrings.translationTargetOptions || []).find(
+                (option) => option.value === 'auto'
+            )?.label || 'Auto'
         );
     }
 
-    function buildTranslationTargetMarkup(t) {
+    function buildTranslationTargetMarkup(toolbarStrings) {
         return `
-            <div class="translation-targets hidden" id="translation-targets" aria-label="${t.translateTargetLabel}">
-                <span class="translation-targets-label">${t.translateTargetLabel}</span>
+            <div class="translation-targets hidden" id="translation-targets" aria-label="${toolbarStrings.translateTargetLabel}">
+                <span class="translation-targets-label">${toolbarStrings.translateTargetLabel}</span>
                 <div class="translation-target-dropdown" id="translation-target-dropdown">
                     <button type="button" class="translation-target-trigger" id="translation-target-trigger" aria-haspopup="true" aria-expanded="false">
-                        <span class="translation-target-summary" id="translation-target-summary">${getDefaultTranslationTargetLabel(t)}</span>
+                        <span class="translation-target-summary" id="translation-target-summary">${getDefaultTranslationTargetLabel(toolbarStrings)}</span>
                         <span class="translation-target-caret" aria-hidden="true">${ICONS.CHEVRON_RIGHT}</span>
                     </button>
                     <div class="translation-target-menu hidden" id="translation-target-menu">
                         <div class="translation-target-options" id="translation-target-options">
-                            ${buildTranslationTargetOptions(t)}
+                            ${buildTranslationTargetOptions(toolbarStrings)}
                         </div>
                     </div>
                 </div>
@@ -48,55 +49,53 @@
     }
 
     function buildMainStructure() {
-        const t = window.GeminiToolbarStrings || {};
+        const toolbarStrings = window.GeminiToolbarStrings || {};
         const toolbarHTML = `
-        <!-- Quick Actions Toolbar (Dark Theme) -->
         <div class="toolbar" id="toolbar">
             <div class="toolbar-drag-handle" id="toolbar-drag">${ICONS.DRAG}</div>
-            <button class="btn" id="btn-ask" title="${t.askAi}">${ICONS.LOGO}</button>
-            <button class="btn" id="btn-copy" title="${t.copy}">${ICONS.COPY}</button>
-            <button class="btn hidden" id="btn-grammar" title="${t.fixGrammar}">${ICONS.GRAMMAR}</button>
-            <button class="btn" id="btn-translate" title="${t.translate}">${ICONS.TRANSLATE}</button>
-            <button class="btn" id="btn-explain" title="${t.explain}">${ICONS.EXPLAIN}</button>
-            <button class="btn" id="btn-summarize" title="${t.summarize}">${ICONS.SUMMARIZE}</button>
+            <button class="btn" id="btn-ask" title="${toolbarStrings.askAi}">${ICONS.LOGO}</button>
+            <button class="btn" id="btn-copy" title="${toolbarStrings.copy}">${ICONS.COPY}</button>
+            <button class="btn hidden" id="btn-grammar" title="${toolbarStrings.fixGrammar}">${ICONS.GRAMMAR}</button>
+            <button class="btn" id="btn-translate" title="${toolbarStrings.translate}">${ICONS.TRANSLATE}</button>
+            <button class="btn" id="btn-explain" title="${toolbarStrings.explain}">${ICONS.EXPLAIN}</button>
+            <button class="btn" id="btn-summarize" title="${toolbarStrings.summarize}">${ICONS.SUMMARIZE}</button>
             <div class="custom-selection-tools" id="custom-selection-tools"></div>
             <div class="custom-selection-more hidden" id="custom-selection-more">
-                <button class="btn" id="btn-custom-selection-more" title="${t.customSelectionMore || 'More custom tools'}">${ICONS.TOOLS}</button>
+                <button class="btn" id="btn-custom-selection-more" title="${toolbarStrings.customSelectionMore || 'More custom tools'}">${ICONS.TOOLS}</button>
                 <div class="custom-selection-more-menu" id="custom-selection-more-menu"></div>
             </div>
         </div>
     `;
 
         const imageMenuHTML = `
-        <!-- Image Button / AI Tools Menu -->
         <div class="image-btn" id="image-btn">
-            <div class="ai-tool-trigger" title="${t.aiTools}">
+            <div class="ai-tool-trigger" title="${toolbarStrings.aiTools}">
                 ${ICONS.LOGO}
             </div>
             <div class="ai-tool-menu">
                 <div class="menu-item" id="btn-image-chat">
-                    ${ICONS.CHAT_BUBBLE} <span>${t.chatWithImage}</span>
+                    ${ICONS.CHAT_BUBBLE} <span>${toolbarStrings.chatWithImage}</span>
                 </div>
                 <div class="menu-item" id="btn-image-describe">
-                    ${ICONS.IMAGE_EYE} <span>${t.describeImage}</span>
+                    ${ICONS.IMAGE_EYE} <span>${toolbarStrings.describeImage}</span>
                 </div>
                 <div class="menu-item" id="btn-image-extract">
-                    ${ICONS.SCAN_TEXT} <span>${t.extractText}</span>
+                    ${ICONS.SCAN_TEXT} <span>${toolbarStrings.extractText}</span>
                 </div>
                 <div class="menu-item" id="btn-image-translate">
-                    ${ICONS.TRANSLATE} <span>${t.translateImageText}</span>
+                    ${ICONS.TRANSLATE} <span>${toolbarStrings.translateImageText}</span>
                 </div>
 
                 <div class="menu-item has-submenu">
-                    ${ICONS.TOOLS} <span>${t.imageTools}</span>
+                    ${ICONS.TOOLS} <span>${toolbarStrings.imageTools}</span>
                     <div class="submenu-arrow">${ICONS.CHEVRON_RIGHT}</div>
 
                     <div class="submenu">
-                        <div class="menu-item" id="btn-image-remove-bg">${ICONS.REMOVE_BG} <span>${t.removeBg}</span></div>
-                        <div class="menu-item" id="btn-image-remove-text">${ICONS.REMOVE_TEXT} <span>${t.removeText}</span></div>
-                        <div class="menu-item" id="btn-image-remove-watermark">${ICONS.REMOVE_WATERMARK} <span>${t.removeWatermark}</span></div>
-                        <div class="menu-item" id="btn-image-upscale">${ICONS.UPSCALE} <span>${t.upscale}</span></div>
-                        <div class="menu-item" id="btn-image-expand">${ICONS.EXPAND} <span>${t.expand}</span></div>
+                        <div class="menu-item" id="btn-image-remove-bg">${ICONS.REMOVE_BG} <span>${toolbarStrings.removeBg}</span></div>
+                        <div class="menu-item" id="btn-image-remove-text">${ICONS.REMOVE_TEXT} <span>${toolbarStrings.removeText}</span></div>
+                        <div class="menu-item" id="btn-image-remove-watermark">${ICONS.REMOVE_WATERMARK} <span>${toolbarStrings.removeWatermark}</span></div>
+                        <div class="menu-item" id="btn-image-upscale">${ICONS.UPSCALE} <span>${toolbarStrings.upscale}</span></div>
+                        <div class="menu-item" id="btn-image-expand">${ICONS.EXPAND} <span>${toolbarStrings.expand}</span></div>
                     </div>
                 </div>
             </div>
@@ -104,29 +103,28 @@
     `;
 
         const windowHTML = `
-        <!-- Main Ask Window (Light Theme, Resizable) -->
         <div class="ask-window" id="ask-window">
             <div class="ask-header" id="ask-header">
                 <div class="header-title-group">
-                    <span class="window-title" id="window-title">${t.windowTitle}</span>
-                    ${buildTranslationTargetMarkup(t)}
+                    <span class="window-title" id="window-title">${toolbarStrings.windowTitle}</span>
+                    ${buildTranslationTargetMarkup(toolbarStrings)}
                 </div>
                 <div class="header-actions">
-                    <select id="ask-provider-select" class="ask-provider-select" title="${t.toolbarProviderLabel || 'Popup provider'}">
-                        <option value="web">${t.providerWebShort || 'Web'}</option>
-                        <option value="official">${t.providerOfficialShort || 'API'}</option>
-                        <option value="openai">${t.providerOpenAIShort || 'OpenAI'}</option>
+                    <select id="ask-provider-select" class="ask-provider-select" title="${toolbarStrings.toolbarProviderLabel || 'Popup provider'}">
+                        <option value="web">${toolbarStrings.providerWebShort || 'Web'}</option>
+                        <option value="official">${toolbarStrings.providerOfficialShort || 'API'}</option>
+                        <option value="openai">${toolbarStrings.providerOpenAIShort || 'OpenAI'}</option>
                     </select>
                     <select id="ask-model-select" class="ask-model-select">
                         ${WEB_MODEL_OPTIONS}
                     </select>
-                    <button class="icon-btn" id="btn-header-close" title="${t.close}">${ICONS.CLOSE}</button>
+                    <button class="icon-btn" id="btn-header-close" title="${toolbarStrings.close}">${ICONS.CLOSE}</button>
                 </div>
             </div>
 
             <div class="window-body">
                 <div class="input-container">
-                    <input type="text" id="ask-input" placeholder="${t.askPlaceholder}" autocomplete="off">
+                    <input type="text" id="ask-input" placeholder="${toolbarStrings.askPlaceholder}" autocomplete="off">
                 </div>
 
                 <div class="context-preview hidden" id="context-preview"></div>
@@ -137,33 +135,31 @@
             </div>
 
             <div class="window-footer" id="window-footer">
-                <!-- Footer actions shown after a result is available. -->
                 <div class="footer-actions hidden" id="footer-actions">
                     <div class="footer-left">
-                        <button class="footer-btn" id="btn-retry" title="${t.retry}">
+                        <button class="footer-btn" id="btn-retry" title="${toolbarStrings.retry}">
                             ${ICONS.RETRY}
                         </button>
-                        <button class="footer-btn text-btn" id="btn-continue-chat" title="${t.openSidebar}">
-                            ${ICONS.CONTINUE} <span>${t.chat}</span>
+                        <button class="footer-btn text-btn" id="btn-continue-chat" title="${toolbarStrings.openSidebar}">
+                            ${ICONS.CONTINUE} <span>${toolbarStrings.chat}</span>
                         </button>
                     </div>
                     <div class="footer-right">
-                        <button class="footer-btn text-btn hidden" id="btn-insert" title="${t.insertTooltip}">
-                            ${ICONS.INSERT} <span>${t.insert}</span>
+                        <button class="footer-btn text-btn hidden" id="btn-insert" title="${toolbarStrings.insertTooltip}">
+                            ${ICONS.INSERT} <span>${toolbarStrings.insert}</span>
                         </button>
-                        <button class="footer-btn text-btn hidden" id="btn-replace" title="${t.replaceTooltip}">
-                            ${ICONS.REPLACE} <span>${t.replace}</span>
+                        <button class="footer-btn text-btn hidden" id="btn-replace" title="${toolbarStrings.replaceTooltip}">
+                            ${ICONS.REPLACE} <span>${toolbarStrings.replace}</span>
                         </button>
-                         <button class="footer-btn" id="btn-copy-result" title="${t.copyResult}">
+                         <button class="footer-btn" id="btn-copy-result" title="${toolbarStrings.copyResult}">
                             ${ICONS.COPY}
                         </button>
                     </div>
                 </div>
 
-                <!-- Stop Button (Shown when generating) -->
                 <div class="footer-stop hidden" id="footer-stop">
                     <button class="stop-pill-btn" id="btn-stop-gen">
-                        ${ICONS.STOP} ${t.stopGenerating}
+                        ${ICONS.STOP} ${toolbarStrings.stopGenerating}
                     </button>
                 </div>
             </div>

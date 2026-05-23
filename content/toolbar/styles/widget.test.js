@@ -21,4 +21,13 @@ describe('GeminiStyles.Widget', () => {
         expect(css).not.toContain('.ai-tool-trigger-badge');
         expect(css).not.toContain('.ai-tool-trigger-main');
     });
+
+    it('keeps toolbar logo sizing in CSS', () => {
+        const css = window.GeminiStyles.Widget;
+
+        expect(css).toContain('.toolbar-logo');
+        expect(css).toContain('width: 20px');
+        expect(css).toContain('height: 20px');
+        expect(css).toContain('display: block');
+    });
 });

@@ -1,3 +1,5 @@
+import { getSettingsElement } from '../dom.js';
+
 export class ShortcutsSection {
     constructor() {
         this.elements = {};
@@ -6,12 +8,11 @@ export class ShortcutsSection {
     }
 
     queryElements() {
-        const get = (id) => document.getElementById(id);
         this.elements = {
-            inputQuickAsk: get('shortcut-quick-ask'),
-            inputOpenPanel: get('shortcut-open-panel'),
-            inputBrowserControl: get('shortcut-browser-control'),
-            inputOcrCapture: get('shortcut-ocr-capture'),
+            inputQuickAsk: getSettingsElement('shortcut-quick-ask'),
+            inputOpenPanel: getSettingsElement('shortcut-open-panel'),
+            inputBrowserControl: getSettingsElement('shortcut-browser-control'),
+            inputOcrCapture: getSettingsElement('shortcut-ocr-capture'),
         };
     }
 

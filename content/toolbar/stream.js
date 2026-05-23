@@ -13,7 +13,6 @@
         handleStreamMessage(request, sender, sendResponse) {
             if (request.action === 'GEMINI_STREAM_UPDATE') {
                 if (this.ui.isVisible()) {
-                    // Update result in real-time, passing isStreaming = true
                     this.ui.showResult(request.text, null, true);
                 }
             }
@@ -29,18 +28,14 @@
 
                 if (this.ui.isVisible()) {
                     if (result && result.status === 'success') {
-                        // Finished, pass isStreaming = false
-                        // Pass result.images array
                         this.ui.showResult(result.text, null, false, result.images);
                     } else if (result && result.status === 'error') {
                         this.ui.showError(result.text);
                     }
-                    // If result is null (cancelled), do nothing or handle accordingly
                 }
             }
         }
     }
 
-    // Export to Window
     window.GeminiStreamHandler = GeminiStreamHandler;
 })();

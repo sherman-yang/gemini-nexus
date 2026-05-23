@@ -1,15 +1,8 @@
-const HelpButtons = {
-    mcpToolsDesc:
-        '<button type="button" class="setting-help" data-i18n-title="mcpToolsDesc" title="Connect to an MCP server and use its tools in chat." aria-label="Help">?</button>',
-    mcpHeadersDesc:
-        '<button type="button" class="setting-help" data-i18n-title="mcpHeadersDesc" title="Optional JSON object. Applied to SSE and Streamable HTTP requests." aria-label="Help">?</button>',
-};
-
-const HelpButton = (key) => HelpButtons[key] || '';
+import { createSettingsHelpButton } from './help_button.js';
 
 export const ConnectionSettingsTemplate = `
     <div class="setting-group">
-        <h4 data-i18n="connection">Connection</h4>
+        <h4 data-i18n="apiSettings">API</h4>
 
         <div class="setting-panel">
             <label class="setting-label" data-i18n="connectionProvider">Model Provider</label>
@@ -91,7 +84,7 @@ export const ConnectionSettingsTemplate = `
         <div class="setting-panel">
             <div class="setting-panel-row">
                 <div class="setting-panel-header">
-                    <h5><span data-i18n="mcpTools">MCP External Tools</span>${HelpButton('mcpToolsDesc')}</h5>
+                    <h5><span data-i18n="mcpTools">MCP External Tools</span>${createSettingsHelpButton('mcpToolsDesc')}</h5>
                 </div>
                 <input type="checkbox" id="mcp-enabled" class="setting-toggle" />
             </div>
@@ -123,7 +116,7 @@ export const ConnectionSettingsTemplate = `
                     <input type="text" id="mcp-server-url" class="settings-input settings-full-input" placeholder="http://127.0.0.1:3006/mcp">
                 </div>
                 <div class="setting-field">
-                    <span class="setting-field-label"><span data-i18n="mcpHeaders">Request Headers (JSON)</span>${HelpButton('mcpHeadersDesc')}</span>
+                    <span class="setting-field-label"><span data-i18n="mcpHeaders">Request Headers (JSON)</span>${createSettingsHelpButton('mcpHeadersDesc')}</span>
                     <textarea id="mcp-headers" class="settings-input settings-full-input settings-monospace-textarea" data-i18n-placeholder="mcpHeadersPlaceholder"></textarea>
                 </div>
 

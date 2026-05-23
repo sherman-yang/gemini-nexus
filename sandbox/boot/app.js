@@ -66,7 +66,7 @@ export function initAppMode() {
         bridge.setUI(ui);
         bridge.setApp(app);
 
-        bindAppEvents(app, ui, (fn) => bridge.setResizeFn(fn));
+        bindAppEvents(app, ui, (resizeCallback) => bridge.setResizeCallback(resizeCallback));
 
         // Re-render restored sessions exactly when Markdown becomes available.
         window.addEventListener(MARKDOWN_READY_EVENT, () => {

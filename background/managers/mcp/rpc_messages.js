@@ -2,13 +2,13 @@ import { mergeHeaders, mergeHttpTransportHeaders } from './transport.js';
 import { clearListCache } from './tool_listing.js';
 import { STREAMABLE_HTTP_ACCEPT } from './streamable_http.js';
 
-export function handleIncomingRpcMessage(conn, msg, resolvePendingRpcMessage) {
-    if (msg && typeof msg === 'object' && typeof msg.method === 'string') {
-        handleServerMethod(conn, msg);
+export function handleIncomingRpcMessage(conn, rpcMessage, resolvePendingRpcMessage) {
+    if (rpcMessage && typeof rpcMessage === 'object' && typeof rpcMessage.method === 'string') {
+        handleServerMethod(conn, rpcMessage);
         return;
     }
 
-    resolvePendingRpcMessage(conn, msg);
+    resolvePendingRpcMessage(conn, rpcMessage);
 }
 
 export function sendNotification(conn, method, params) {
@@ -31,10 +31,10 @@ export function terminateStreamableHttpSession(conn) {
     }).catch(() => {});
 }
 
-function handleServerMethod(conn, msg) {
-    switch (msg.method) {
+function handleServerMethod(conn, rpcMessage) {
+    switch (rpcMessage.method) {
         case 'ping':
-            if (msg.id !== undefined) sendJsonRpcResponse(conn, msg.id, {});
+            if (rpcMessage.id !== undefined) sendJsonRpcResponse(conn, rpcMessage.id, {});
             break;
         case 'notifications/tools/list_changed':
             clearListCache(conn, 'tools');
@@ -47,8 +47,13 @@ function handleServerMethod(conn, msg) {
             clearListCache(conn, 'resourceTemplates');
             break;
         default:
-            if (msg.id !== undefined) {
-                sendJsonRpcError(conn, msg.id, -32601, `Unsupported MCP method: ${msg.method}`);
+            if (rpcMessage.id !== undefined) {
+                sendJsonRpcError(
+                    conn,
+                    rpcMessage.id,
+                    -32601,
+                    `Unsupported MCP method: ${rpcMessage.method}`
+                );
             }
     }
 }
@@ -61,10 +66,10 @@ function sendJsonRpcError(conn, id, code, message) {
     sendJsonRpcMessage(conn, { jsonrpc: '2.0', id, error: { code, message } });
 }
 
-function sendJsonRpcMessage(conn, msg) {
+function sendJsonRpcMessage(conn, rpcMessage) {
     if (conn.transport === 'ws') {
         if (!conn.ws || conn.ws.readyState !== WebSocket.OPEN) return;
-        conn.ws.send(JSON.stringify(msg));
+        conn.ws.send(JSON.stringify(rpcMessage));
         return;
     }
 
@@ -73,7 +78,7 @@ function sendJsonRpcMessage(conn, msg) {
         fetch(conn.ssePostUrl, {
             method: 'POST',
             headers: mergeHeaders({ 'Content-Type': 'application/json' }, conn.headers),
-            body: JSON.stringify(msg),
+            body: JSON.stringify(rpcMessage),
         }).catch(() => {});
         return;
     }
@@ -86,7 +91,7 @@ function sendJsonRpcMessage(conn, msg) {
                 'Content-Type': 'application/json',
                 Accept: STREAMABLE_HTTP_ACCEPT,
             }),
-            body: JSON.stringify(msg),
+            body: JSON.stringify(rpcMessage),
         }).catch(() => {});
     }
 }

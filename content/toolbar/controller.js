@@ -79,8 +79,6 @@
                 }
             });
 
-            this.imageDetector.init();
-
             window.addEventListener('gemini-toolbar-language-changed', () => {
                 this.ui.rebuildForLanguageChange();
                 this.syncSettings();

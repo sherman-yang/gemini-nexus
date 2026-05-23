@@ -1,5 +1,8 @@
 (function () {
-    const s = window.GeminiStyles || {};
+    const styles = window.GeminiStyles || {};
     window.GeminiToolbarStyles =
-        (s.Core || '') + (s.Widget || '') + (s.Panel || '') + (s.Markdown || '');
+        (styles.Core || '') +
+        (styles.Widget || '') +
+        (styles.Panel || '') +
+        (styles.Markdown || '');
 })();

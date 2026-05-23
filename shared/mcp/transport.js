@@ -82,7 +82,7 @@ export function hasMcpHeaders(headers) {
 export function stableMcpHeadersKey(headers) {
     const normalized = normalizeMcpHeaders(headers);
     return Object.keys(normalized)
-        .sort((a, b) => a.localeCompare(b))
+        .sort((leftHeaderName, rightHeaderName) => leftHeaderName.localeCompare(rightHeaderName))
         .map((key) => `${key}:${normalized[key]}`)
         .join('\n');
 }

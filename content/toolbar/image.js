@@ -6,13 +6,7 @@
             this.imageButtonTimeout = null;
             this.isEnabled = false;
 
-            // Bind method for event listeners
             this.onImageHover = this.onImageHover.bind(this);
-        }
-
-        init() {
-            // Default to enabled, but actual state set via setEnabled
-            // Event listeners are only active when enabled
         }
 
         setEnabled(enabled) {
@@ -25,27 +19,27 @@
             } else {
                 document.removeEventListener('mouseover', this.onImageHover, true);
                 document.removeEventListener('mouseout', this.onImageHover, true);
-                this.scheduleHide(0); // Hide immediately
+                this.scheduleHide(0);
             }
         }
 
-        onImageHover(e) {
+        onImageHover(mouseEvent) {
             if (!this.isEnabled) return;
-            const isEnter = e.type === 'mouseover';
+            const isEnter = mouseEvent.type === 'mouseover';
 
-            if (e.target.tagName !== 'IMG') return;
+            if (mouseEvent.target.tagName !== 'IMG') return;
 
             // Ignore small images (icons, spacers)
-            const img = e.target;
-            if (img.width < 100 || img.height < 100) return;
+            const imageElement = mouseEvent.target;
+            if (imageElement.width < 100 || imageElement.height < 100) return;
 
             if (isEnter) {
                 if (this.imageButtonTimeout) clearTimeout(this.imageButtonTimeout);
-                this.hoveredImage = img;
-                const rect = img.getBoundingClientRect();
+                this.hoveredImage = imageElement;
+                const imageRect = imageElement.getBoundingClientRect();
 
                 if (this.callbacks.onShow) {
-                    this.callbacks.onShow(rect);
+                    this.callbacks.onShow(imageRect);
                 }
             } else {
                 this.scheduleHide();
@@ -71,6 +65,5 @@
         }
     }
 
-    // Export to Window
     window.GeminiImageDetector = GeminiImageDetector;
 })();

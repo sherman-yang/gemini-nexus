@@ -28,10 +28,8 @@ export class AppController {
         // Sidebar Restore Behavior: 'auto', 'restore', 'new'
         this.sidebarRestoreBehavior = 'auto';
 
-        // Initialize Message Handler
         this.messageHandler = new MessageHandler(sessionManager, uiController, imageManager, this);
 
-        // Initialize Sub-Controllers
         this.sessionFlow = new SessionFlowController(sessionManager, uiController, this);
         this.prompt = new PromptController(sessionManager, uiController, imageManager, this);
 
@@ -66,7 +64,6 @@ export class AppController {
     }
 
     toggleBrowserControl(forceState = null) {
-        // If forceState is provided, match it. Otherwise toggle.
         if (forceState !== null) {
             if (this.browserControlActive === forceState) return;
             this.browserControlActive = forceState;
@@ -79,7 +76,6 @@ export class AppController {
             browserControlButton.classList.toggle('active', this.browserControlActive);
         }
 
-        // Show/Hide the tab switcher in header
         this.ui.toggleTabSwitcher(this.browserControlActive);
 
         // Signal background to start/stop debugger session immediately
@@ -87,12 +83,6 @@ export class AppController {
             action: 'TOGGLE_BROWSER_CONTROL',
             enabled: this.browserControlActive,
         });
-
-        if (this.browserControlActive) {
-            // Disable page context if browser control is on (optional preference,
-            // but usually commands don't need full page context context)
-            // For now, keeping them independent.
-        }
     }
 
     handleTabSwitcher() {
@@ -100,11 +90,8 @@ export class AppController {
     }
 
     handleTabSelected(tabId, shouldSwitch = true) {
-        // tabId can be null (to unlock) or an integer
         sendToBackground({ action: 'SWITCH_TAB', tabId: tabId, switchVisual: shouldSwitch });
     }
-
-    // --- Delegation to Sub-Controllers ---
 
     handleNewChat() {
         this.sessionFlow.handleNewChat();
@@ -207,15 +194,12 @@ export class AppController {
         return true;
     }
 
-    // --- Event Handling ---
-
     async handleIncomingMessage(event) {
         const { action, payload } = event.data || {};
         if (!action) return;
 
         if (action === 'RESTORE_SIDEBAR_BEHAVIOR') {
             this.sidebarRestoreBehavior = payload;
-            // Update UI settings panel
             this.ui.settings.updateSidebarBehavior(payload);
             return;
         }
@@ -237,7 +221,6 @@ export class AppController {
             return;
         }
 
-        // Restore Sessions
         if (action === 'RESTORE_SESSIONS') {
             const restoredSessions = Array.isArray(payload) ? payload : [];
             const previousCurrentId = this.sessionManager.currentSessionId;
@@ -295,7 +278,7 @@ export class AppController {
 
         if (action === 'RESTORE_CONNECTION_SETTINGS') {
             this.ui.settings.updateConnectionSettings(payload);
-            // Fix: Pass the full settings payload object, not just the boolean flag
+            // The model list depends on the full connection settings payload.
             this.ui.updateModelList(payload);
             return;
         }
@@ -310,7 +293,6 @@ export class AppController {
                 if (this.ui.inputFn) this.ui.inputFn.focus();
                 return;
             }
-            // Tab list response
             if (payload.action === 'OPEN_TABS_RESULT') {
                 this.ui.openTabSelector(
                     payload.tabs,
@@ -319,7 +301,6 @@ export class AppController {
                 );
                 return;
             }
-            // Tab Locked Notification (Auto-lock update)
             if (payload.action === 'TAB_LOCKED') {
                 if (this.ui && this.ui.updateBrowserControlState) {
                     this.ui.updateBrowserControlState({
@@ -331,12 +312,11 @@ export class AppController {
                 }
                 return;
             }
-            // Page Context Check Result
             if (payload.action === 'PAGE_CONTEXT_RESULT') {
-                const len = payload.length;
-                const formatted = new Intl.NumberFormat().format(len);
-                const msg = t('pageReadSuccess').replace('{count}', formatted);
-                this.ui.updateStatus(msg);
+                const pageContentLength = payload.length;
+                const formattedLength = new Intl.NumberFormat().format(pageContentLength);
+                const statusMessage = t('pageReadSuccess').replace('{count}', formattedLength);
+                this.ui.updateStatus(statusMessage);
                 setTimeout(() => {
                     if (!this.isGenerating) this.ui.updateStatus('');
                 }, 3000);
@@ -345,8 +325,5 @@ export class AppController {
 
             await this.messageHandler.handle(payload);
         }
-
-        // Pass other messages to message bridge handler if not handled here
-        // (AppMessageBridge handles standard restores, this controller handles extended logic)
     }
 }

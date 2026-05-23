@@ -34,8 +34,8 @@ function getLocalStorageData(keys) {
     });
 }
 
-function setLocalStorageData(data) {
-    chrome.storage.local.set(data);
+function setLocalStorageData(storageUpdate) {
+    chrome.storage.local.set(storageUpdate);
 }
 
 function normalizeContextSettings(payload) {
@@ -56,33 +56,35 @@ export class StandaloneSettingsBridge {
     }
 
     async restoreInitialState() {
-        const result = await getLocalStorageData(SETTINGS_STORAGE_KEYS);
-        const shortcuts = { ...DEFAULT_SHORTCUTS, ...(result.geminiShortcuts || {}) };
+        const localStorageData = await getLocalStorageData(SETTINGS_STORAGE_KEYS);
+        const shortcuts = { ...DEFAULT_SHORTCUTS, ...(localStorageData.geminiShortcuts || {}) };
 
         this.controller.updateShortcuts(shortcuts);
         this.controller.updateTheme(
-            result.geminiTheme || localStorage.getItem('geminiTheme') || 'system'
+            localStorageData.geminiTheme || localStorage.getItem('geminiTheme') || 'system'
         );
         this.controller.updateLanguage(
-            result.geminiLanguage || localStorage.getItem('geminiLanguage') || 'system'
+            localStorageData.geminiLanguage || localStorage.getItem('geminiLanguage') || 'system'
         );
-        this.controller.updateTextSelection(result.geminiTextSelectionEnabled !== false);
-        this.controller.updateTextSelectionBlacklist(result.geminiTextSelectionBlacklist || '');
+        this.controller.updateTextSelection(localStorageData.geminiTextSelectionEnabled !== false);
+        this.controller.updateTextSelectionBlacklist(
+            localStorageData.geminiTextSelectionBlacklist || ''
+        );
         this.controller.updateCustomSelectionTools(
-            result[CUSTOM_SELECTION_TOOLS_STORAGE_KEY] || []
+            localStorageData[CUSTOM_SELECTION_TOOLS_STORAGE_KEY] || []
         );
-        this.controller.updateImageTools(result.geminiImageToolsEnabled !== false);
-        this.controller.updateSidebarBehavior(result.geminiSidebarBehavior || 'auto');
+        this.controller.updateImageTools(localStorageData.geminiImageToolsEnabled !== false);
+        this.controller.updateSidebarBehavior(localStorageData.geminiSidebarBehavior || 'auto');
         this.controller.updateSidePanelScope(
-            result.geminiSidePanelScope || DEFAULT_SIDE_PANEL_SCOPE
+            localStorageData.geminiSidePanelScope || DEFAULT_SIDE_PANEL_SCOPE
         );
-        this.controller.updateAccountIndices(result.geminiAccountIndices || '0');
+        this.controller.updateAccountIndices(localStorageData.geminiAccountIndices || '0');
         this.controller.updateContextSettings({
-            mode: result.geminiContextMode || DEFAULT_CONTEXT_MODE,
-            recentTurns: result.geminiContextRecentTurns || DEFAULT_CONTEXT_RECENT_TURNS,
+            mode: localStorageData.geminiContextMode || DEFAULT_CONTEXT_MODE,
+            recentTurns: localStorageData.geminiContextRecentTurns || DEFAULT_CONTEXT_RECENT_TURNS,
         });
         this.controller.updateConnectionSettings(
-            createConnectionSettingsPayload(result, { includeLegacyFallbacks: true })
+            createConnectionSettingsPayload(localStorageData, { includeLegacyFallbacks: true })
         );
 
         if (chrome.runtime?.getManifest) {

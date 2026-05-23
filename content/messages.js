@@ -63,7 +63,6 @@
                     this.captureSource = null;
                     this.captureTargetSidePanelTabId = null;
                 } else {
-                    // Handle locally
                     if (this.toolbarController) {
                         this.toolbarController.handleCropResult(request);
                     }

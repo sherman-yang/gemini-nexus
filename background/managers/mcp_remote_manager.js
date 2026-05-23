@@ -23,7 +23,13 @@ export class McpRemoteManager {
         if (!config || config.enableMcpTools !== true) return false;
         const servers = config.mcpServers;
         if (!Array.isArray(servers)) return false;
-        return servers.some((s) => s && s.enabled !== false && s.url && s.url.trim());
+        return servers.some(
+            (serverConfig) =>
+                serverConfig &&
+                serverConfig.enabled !== false &&
+                serverConfig.url &&
+                serverConfig.url.trim()
+        );
     }
 
     async disconnect(serverId) {
@@ -152,7 +158,7 @@ export class McpRemoteManager {
     async callToolById(toolId, args, servers) {
         const { serverId, toolName } = parseToolId(toolId);
 
-        const server = servers.find((s) => s.id === serverId);
+        const server = servers.find((serverConfig) => serverConfig.id === serverId);
         if (!server) {
             throw new Error(`Server not found: ${serverId}`);
         }

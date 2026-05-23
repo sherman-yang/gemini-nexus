@@ -1,12 +1,11 @@
+import { TemplateIcons } from './icons.js';
+
 export const TabSelectorTemplate = `
     <!-- BROWSER CONTROL BAR -->
     <div id="browser-control-bar" class="browser-control-bar" hidden>
         <button id="browser-control-target" class="browser-control-target" type="button" data-i18n-title="selectTabTooltip" title="Select a tab to control">
             <span id="browser-control-icon-wrap" class="browser-control-icon-wrap">
-                <svg id="browser-control-fallback-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="16" rx="2"/>
-                    <path d="M3 9h18"/>
-                </svg>
+                <span id="browser-control-fallback-icon">${TemplateIcons.BROWSER_TAB}</span>
                 <img id="browser-control-favicon" alt="" hidden>
             </span>
             <span class="browser-control-copy">

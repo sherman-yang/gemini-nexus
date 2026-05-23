@@ -2,10 +2,9 @@ export class AppMessageBridge {
     constructor() {
         this.app = null;
         this.ui = null;
-        this.resizeFn = null;
+        this.resizeCallback = null;
         this.queue = [];
 
-        // Bind immediately
         window.addEventListener('message', this.handleMessage.bind(this));
     }
 
@@ -19,8 +18,8 @@ export class AppMessageBridge {
         this.flush();
     }
 
-    setResizeFn(fn) {
-        this.resizeFn = fn;
+    setResizeCallback(resizeCallback) {
+        this.resizeCallback = resizeCallback;
     }
 
     handleMessage(event) {
@@ -30,7 +29,6 @@ export class AppMessageBridge {
         if (this.app && this.ui) {
             this.dispatch(action, payload, event);
         } else {
-            // Queue messages until app is ready
             this.queue.push({ action, payload, event });
         }
     }
@@ -59,16 +57,14 @@ export class AppMessageBridge {
         }
         if (action === 'RESTORE_MODEL') {
             if (this.ui.modelSelect) {
-                const prev = this.ui.modelSelect.value;
+                const previousModelValue = this.ui.modelSelect.value;
                 this.ui.modelSelect.value = payload;
-                // Safety check: if invalid model, fallback
                 if (this.ui.modelSelect.selectedIndex === -1) {
                     this.ui.modelSelect.value =
-                        prev ||
+                        previousModelValue ||
                         (this.ui.modelSelect.options.length > 0
                             ? this.ui.modelSelect.options[0].value
                             : '');
-                    // Force index 0 if still invalid
                     if (
                         this.ui.modelSelect.selectedIndex === -1 &&
                         this.ui.modelSelect.options.length > 0
@@ -76,7 +72,7 @@ export class AppMessageBridge {
                         this.ui.modelSelect.selectedIndex = 0;
                     }
                 }
-                if (this.resizeFn) this.resizeFn();
+                if (this.resizeCallback) this.resizeCallback();
             }
             return;
         }
@@ -115,7 +111,6 @@ export class AppMessageBridge {
             return;
         }
 
-        // Forward general messages to App Controller
         this.app.handleIncomingMessage(event);
     }
 }

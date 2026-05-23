@@ -26,14 +26,14 @@ function constructPayload(prompt, fileList, contextIds) {
     // Structure aligned with Python Gemini-API: [prompt, 0, null, fileList] or [prompt]
     const messageStruct = fileList.length > 0 ? [prompt, 0, null, fileList] : [prompt];
 
-    const data = [
+    const requestPayload = [
         messageStruct,
         null,
         contextIds, // [conversationId, responseId, choiceId]
     ];
 
-    // The API expects: f.req = JSON.stringify([null, JSON.stringify(data)])
-    return JSON.stringify([null, JSON.stringify(data)]);
+    // The API expects: f.req = JSON.stringify([null, JSON.stringify(requestPayload)])
+    return JSON.stringify([null, JSON.stringify(requestPayload)]);
 }
 
 function stripNativeContextIds(context = {}) {
@@ -193,7 +193,6 @@ export async function sendWebMessage(prompt, context, model, files, signal, onUp
 
             buffer += chunk;
 
-            // Process line-by-line
             let newlineIndex;
             while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
                 const line = buffer.slice(0, newlineIndex);
@@ -214,7 +213,6 @@ export async function sendWebMessage(prompt, context, model, files, signal, onUp
         console.error('Stream reading error:', error);
     }
 
-    // Process remaining buffer
     if (buffer.length > 0) {
         const parsed = parseGeminiLine(buffer);
         if (parsed) finalResult = parsed;

@@ -7,6 +7,7 @@ import { normalizeCustomSelectionTools } from '../../../../shared/settings/selec
 import { createPrefixedId } from '../../../../shared/utils/index.js';
 import { t } from '../../../core/i18n.js';
 import { DOM_IDS, CONFIG_LIMITS } from '../constants.js';
+import { getSettingsElement } from '../dom.js';
 
 function createCustomSelectionToolId() {
     return createPrefixedId('custom_tool');
@@ -21,16 +22,15 @@ export class GeneralSection {
     }
 
     queryElements() {
-        const get = (id) => document.getElementById(id);
         this.elements = {
-            textSelectionToggle: get(DOM_IDS.TEXT_SELECTION_TOGGLE),
-            textSelectionBlacklistInput: get(DOM_IDS.TEXT_SELECTION_BLACKLIST),
-            imageToolsToggle: get(DOM_IDS.IMAGE_TOOLS_TOGGLE),
-            customSelectionToolsList: get(DOM_IDS.CONTAINER_SELECTION_TOOLS),
-            customSelectionToolAdd: get(DOM_IDS.BTN_ADD_SELECTION_TOOL),
-            accountIndicesInput: get(DOM_IDS.ACCOUNT_INDICES),
-            contextModeSelect: get(DOM_IDS.CONTEXT_MODE),
-            contextRecentTurnsInput: get(DOM_IDS.INPUT_RECENT_TURNS),
+            textSelectionToggle: getSettingsElement(DOM_IDS.TEXT_SELECTION_TOGGLE),
+            textSelectionBlacklistInput: getSettingsElement(DOM_IDS.TEXT_SELECTION_BLACKLIST),
+            imageToolsToggle: getSettingsElement(DOM_IDS.IMAGE_TOOLS_TOGGLE),
+            customSelectionToolsList: getSettingsElement(DOM_IDS.CONTAINER_SELECTION_TOOLS),
+            customSelectionToolAdd: getSettingsElement(DOM_IDS.BTN_ADD_SELECTION_TOOL),
+            accountIndicesInput: getSettingsElement(DOM_IDS.ACCOUNT_INDICES),
+            contextModeSelect: getSettingsElement(DOM_IDS.CONTEXT_MODE),
+            contextRecentTurnsInput: getSettingsElement(DOM_IDS.INPUT_RECENT_TURNS),
             sidebarRadios: document.querySelectorAll('input[name="sidebar-behavior"]'),
             sidePanelScopeRadios: document.querySelectorAll('input[name="sidepanel-scope"]'),
         };

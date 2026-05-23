@@ -1,16 +1,16 @@
 const OPENAI_WEB_SEARCH_MODES = new Set(['off', 'responses', 'chat']);
 
-function hasBoolean(data, key) {
+function hasBoolean(settingsData, key) {
     if (!key) return false;
-    return typeof data?.[key] === 'boolean';
+    return typeof settingsData?.[key] === 'boolean';
 }
 
-function isEnabled(data, key) {
+function isEnabled(settingsData, key) {
     if (!key) return false;
-    return data?.[key] === true;
+    return settingsData?.[key] === true;
 }
 
-export function normalizeOpenAIWebSearchSettings(data, keys = {}) {
+export function normalizeOpenAIWebSearchSettings(settingsData, keys = {}) {
     const {
         useResponsesApiKey = 'openaiUseResponsesApi',
         webSearchKey = 'openaiWebSearch',
@@ -20,11 +20,12 @@ export function normalizeOpenAIWebSearchSettings(data, keys = {}) {
         fallbackWebSearchModeKey = null,
     } = keys;
 
-    const legacyMode = data?.[webSearchModeKey] ?? data?.[fallbackWebSearchModeKey];
+    const legacyMode = settingsData?.[webSearchModeKey] ?? settingsData?.[fallbackWebSearchModeKey];
     const hasUseResponsesSetting =
-        hasBoolean(data, useResponsesApiKey) || hasBoolean(data, fallbackUseResponsesApiKey);
+        hasBoolean(settingsData, useResponsesApiKey) ||
+        hasBoolean(settingsData, fallbackUseResponsesApiKey);
     const hasWebSearchSetting =
-        hasBoolean(data, webSearchKey) || hasBoolean(data, fallbackWebSearchKey);
+        hasBoolean(settingsData, webSearchKey) || hasBoolean(settingsData, fallbackWebSearchKey);
 
     if (!hasUseResponsesSetting && OPENAI_WEB_SEARCH_MODES.has(legacyMode)) {
         return {
@@ -35,9 +36,10 @@ export function normalizeOpenAIWebSearchSettings(data, keys = {}) {
 
     return {
         useResponsesApi:
-            isEnabled(data, useResponsesApiKey) || isEnabled(data, fallbackUseResponsesApiKey),
+            isEnabled(settingsData, useResponsesApiKey) ||
+            isEnabled(settingsData, fallbackUseResponsesApiKey),
         webSearch: hasWebSearchSetting
-            ? isEnabled(data, webSearchKey) || isEnabled(data, fallbackWebSearchKey)
+            ? isEnabled(settingsData, webSearchKey) || isEnabled(settingsData, fallbackWebSearchKey)
             : false,
     };
 }

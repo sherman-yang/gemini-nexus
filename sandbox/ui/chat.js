@@ -1,5 +1,6 @@
 import { t } from '../core/i18n.js';
 import { copyToClipboard } from '../render/clipboard.js';
+import { TemplateIcons } from './templates/icons.js';
 import '../../shared/ui/copy_feedback.js';
 
 export class ChatController {
@@ -225,7 +226,7 @@ export class ChatController {
     resetInput() {
         if (this.inputFn) {
             this.inputFn.value = '';
-            this.inputFn.style.height = 'auto'; // Reset height only once
+            this.inputFn.style.height = 'auto';
             this.updateFooterOffset();
             this.inputFn.focus();
         }
@@ -243,8 +244,7 @@ export class ChatController {
             if (this.statusDiv) this.statusDiv.classList.add('thinking');
 
             if (this.sendBtn) {
-                this.sendBtn.innerHTML =
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="7" y="7" width="10" height="10" rx="1"/></svg>';
+                this.sendBtn.innerHTML = TemplateIcons.STOP;
                 this.sendBtn.title = t('stopGenerating');
                 this.sendBtn.classList.add('generating');
             }
@@ -253,8 +253,7 @@ export class ChatController {
             if (this.statusDiv) this.statusDiv.classList.remove('thinking');
 
             if (this.sendBtn) {
-                this.sendBtn.innerHTML =
-                    '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+                this.sendBtn.innerHTML = TemplateIcons.SEND;
                 this.sendBtn.title = t('sendMessage');
                 this.sendBtn.disabled = false;
                 this.sendBtn.classList.remove('generating');

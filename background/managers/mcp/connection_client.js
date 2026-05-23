@@ -58,7 +58,7 @@ export class McpConnectionClient {
         }
 
         const id = this.nextId++;
-        const msg = {
+        const rpcRequest = {
             jsonrpc: '2.0',
             id,
             method,
@@ -75,12 +75,12 @@ export class McpConnectionClient {
         });
 
         if (conn.transport === 'ws') {
-            conn.ws.send(JSON.stringify(msg));
+            conn.ws.send(JSON.stringify(rpcRequest));
         } else {
             fetch(conn.ssePostUrl, {
                 method: 'POST',
                 headers: mergeHeaders({ 'Content-Type': 'application/json' }, conn.headers),
-                body: JSON.stringify(msg),
+                body: JSON.stringify(rpcRequest),
             }).catch((error) => {
                 const entry = conn.pending.get(id);
                 if (entry) {
@@ -138,16 +138,16 @@ export class McpConnectionClient {
         disconnectMcpConnectionState(conn);
     }
 
-    _resolvePendingRpcMessage(conn, msg) {
-        if (!msg || typeof msg !== 'object' || msg.id === undefined) return;
+    _resolvePendingRpcMessage(conn, rpcMessage) {
+        if (!rpcMessage || typeof rpcMessage !== 'object' || rpcMessage.id === undefined) return;
 
-        const entry = conn.pending.get(msg.id);
+        const entry = conn.pending.get(rpcMessage.id);
         if (!entry) return;
 
         clearTimeout(entry.timeout);
-        conn.pending.delete(msg.id);
-        if (msg.error) entry.reject(new Error(msg.error.message || 'MCP error'));
-        else entry.resolve(msg.result);
+        conn.pending.delete(rpcMessage.id);
+        if (rpcMessage.error) entry.reject(new Error(rpcMessage.error.message || 'MCP error'));
+        else entry.resolve(rpcMessage.result);
     }
 
     _handleIncomingRpcMessage(conn, message) {

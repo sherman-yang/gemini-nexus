@@ -9,7 +9,6 @@
             this.elements = {};
             this.cacheElements();
 
-            // Initialize Sub-Views
             this.widgetView = new window.GeminiViewWidget(this.elements);
             this.windowView = new window.GeminiViewWindow(this.elements);
 
@@ -24,70 +23,58 @@
         }
 
         cacheElements() {
-            const get = (id) => this.shadow.getElementById(id);
+            const getToolbarElement = (id) => this.shadow.getElementById(id);
             this.elements = {
-                toolbar: get('toolbar'),
-                toolbarDrag: get('toolbar-drag'),
-                customSelectionTools: get('custom-selection-tools'),
-                customSelectionMore: get('custom-selection-more'),
-                customSelectionMoreMenu: get('custom-selection-more-menu'),
-                imageBtn: get('image-btn'),
-
-                // New Window Elements
-                askWindow: get('ask-window'),
-                askHeader: get('ask-header'),
-                windowTitle: get('window-title'),
-                contextPreview: get('context-preview'),
-                askInput: get('ask-input'),
-                translationTargets: get('translation-targets'),
-                translationTargetTrigger: get('translation-target-trigger'),
-                translationTargetMenu: get('translation-target-menu'),
-                translationTargetSummary: get('translation-target-summary'),
-                translationTargetOptions: get('translation-target-options'),
-                resultArea: get('result-area'),
-                resultText: get('result-text'),
-                askProviderSelect: get('ask-provider-select'),
-                askModelSelect: get('ask-model-select'),
-
-                // Footer Elements
-                windowFooter: get('window-footer'),
-                footerActions: get('footer-actions'),
-                footerStop: get('footer-stop'),
-
-                // Buttons
+                toolbar: getToolbarElement('toolbar'),
+                toolbarDrag: getToolbarElement('toolbar-drag'),
+                customSelectionTools: getToolbarElement('custom-selection-tools'),
+                customSelectionMore: getToolbarElement('custom-selection-more'),
+                customSelectionMoreMenu: getToolbarElement('custom-selection-more-menu'),
+                imageBtn: getToolbarElement('image-btn'),
+                askWindow: getToolbarElement('ask-window'),
+                askHeader: getToolbarElement('ask-header'),
+                windowTitle: getToolbarElement('window-title'),
+                contextPreview: getToolbarElement('context-preview'),
+                askInput: getToolbarElement('ask-input'),
+                translationTargets: getToolbarElement('translation-targets'),
+                translationTargetTrigger: getToolbarElement('translation-target-trigger'),
+                translationTargetMenu: getToolbarElement('translation-target-menu'),
+                translationTargetSummary: getToolbarElement('translation-target-summary'),
+                translationTargetOptions: getToolbarElement('translation-target-options'),
+                resultArea: getToolbarElement('result-area'),
+                resultText: getToolbarElement('result-text'),
+                askProviderSelect: getToolbarElement('ask-provider-select'),
+                askModelSelect: getToolbarElement('ask-model-select'),
+                windowFooter: getToolbarElement('window-footer'),
+                footerActions: getToolbarElement('footer-actions'),
+                footerStop: getToolbarElement('footer-stop'),
                 buttons: {
-                    copySelection: get('btn-copy'),
-                    ask: get('btn-ask'),
-                    grammar: get('btn-grammar'),
-                    translate: get('btn-translate'),
-                    explain: get('btn-explain'),
-                    summarize: get('btn-summarize'),
-                    customSelectionMore: get('btn-custom-selection-more'),
-                    headerClose: get('btn-header-close'),
-                    stop: get('btn-stop-gen'),
-                    continue: get('btn-continue-chat'),
-                    copy: get('btn-copy-result'),
-                    retry: get('btn-retry'),
-                    insert: get('btn-insert'),
-                    replace: get('btn-replace'),
-
-                    // Image Menu Buttons
-                    imageChat: get('btn-image-chat'),
-                    imageDescribe: get('btn-image-describe'),
-                    imageExtract: get('btn-image-extract'),
-                    imageTranslate: get('btn-image-translate'),
-
-                    // Image Edit Buttons
-                    imageRemoveBg: get('btn-image-remove-bg'),
-                    imageRemoveText: get('btn-image-remove-text'),
-                    imageRemoveWatermark: get('btn-image-remove-watermark'),
-                    imageUpscale: get('btn-image-upscale'),
-                    imageExpand: get('btn-image-expand'),
+                    copySelection: getToolbarElement('btn-copy'),
+                    ask: getToolbarElement('btn-ask'),
+                    grammar: getToolbarElement('btn-grammar'),
+                    translate: getToolbarElement('btn-translate'),
+                    explain: getToolbarElement('btn-explain'),
+                    summarize: getToolbarElement('btn-summarize'),
+                    customSelectionMore: getToolbarElement('btn-custom-selection-more'),
+                    headerClose: getToolbarElement('btn-header-close'),
+                    stop: getToolbarElement('btn-stop-gen'),
+                    continue: getToolbarElement('btn-continue-chat'),
+                    copy: getToolbarElement('btn-copy-result'),
+                    retry: getToolbarElement('btn-retry'),
+                    insert: getToolbarElement('btn-insert'),
+                    replace: getToolbarElement('btn-replace'),
+                    imageChat: getToolbarElement('btn-image-chat'),
+                    imageDescribe: getToolbarElement('btn-image-describe'),
+                    imageExtract: getToolbarElement('btn-image-extract'),
+                    imageTranslate: getToolbarElement('btn-image-translate'),
+                    imageRemoveBg: getToolbarElement('btn-image-remove-bg'),
+                    imageRemoveText: getToolbarElement('btn-image-remove-text'),
+                    imageRemoveWatermark: getToolbarElement('btn-image-remove-watermark'),
+                    imageUpscale: getToolbarElement('btn-image-upscale'),
+                    imageExpand: getToolbarElement('btn-image-expand'),
                 },
             };
         }
-
-        // --- Delegation to Widget View ---
 
         showToolbar(rect, mousePoint) {
             this.widgetView.showToolbar(rect, mousePoint);
@@ -107,8 +94,6 @@
         toggleCopySelectionIcon(success) {
             this.widgetView.toggleCopySelectionIcon(success);
         }
-
-        // --- Delegation to Window View ---
 
         showAskWindow(rect, contextText, title, resetDrag, mousePoint) {
             return this.windowView.show(rect, contextText, title, resetDrag, mousePoint);
@@ -160,8 +145,6 @@
             this.windowView.undockWindow();
         }
 
-        // --- Model Selection ---
-
         getSelectedModel() {
             return this.elements.askModelSelect
                 ? this.elements.askModelSelect.value
@@ -208,8 +191,6 @@
             const Layout = window.GeminiViewLayout;
             if (Layout && Layout.resizeSelect) Layout.resizeSelect(select);
         }
-
-        // --- General ---
 
         isHost(target, host) {
             return target === host || this.windowView.isHost(target);

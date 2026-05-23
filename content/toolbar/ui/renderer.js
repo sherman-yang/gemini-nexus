@@ -16,19 +16,17 @@
         async show(text, title, isStreaming, images = []) {
             this.currentResultText = text;
 
-            // Delegate rendering to iframe (Offscreen Renderer)
-            // The bridge now handles both Markdown AND Image HTML generation to share logic with Sandbox
-            let html = text;
-            let tasks = [];
+            let renderedHtml = text;
+            let imageFetchTasks = [];
 
             if (this.bridge) {
                 try {
-                    const result = await this.bridge.render(text, isStreaming ? [] : images);
-                    html = result.html;
-                    tasks = result.fetchTasks || [];
+                    const renderResult = await this.bridge.render(text, isStreaming ? [] : images);
+                    renderedHtml = renderResult.html;
+                    imageFetchTasks = renderResult.fetchTasks || [];
                 } catch {
                     console.warn('Bridge render failed, falling back to simple escape');
-                    html = text
+                    renderedHtml = text
                         .replace(/&/g, '&amp;')
                         .replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;')
@@ -36,12 +34,10 @@
                 }
             }
 
-            // Pass to view
-            this.view.showResult(html, title, isStreaming);
+            this.view.showResult(renderedHtml, title, isStreaming);
 
-            // Execute fetch tasks (images) if any
-            if (tasks.length > 0) {
-                this._executeImageFetchTasks(tasks);
+            if (imageFetchTasks.length > 0) {
+                this._executeImageFetchTasks(imageFetchTasks);
             }
         }
 
@@ -50,9 +46,8 @@
             if (!container) return;
 
             tasks.forEach((task) => {
-                const img = container.querySelector(`img[data-req-id="${task.reqId}"]`);
-                if (img) {
-                    // Send message to background to fetch actual image
+                const imageElement = container.querySelector(`img[data-req-id="${task.reqId}"]`);
+                if (imageElement) {
                     chrome.runtime.sendMessage({
                         action: 'FETCH_GENERATED_IMAGE',
                         url: task.url,
@@ -66,15 +61,15 @@
             const container = this.view.elements.resultText;
             if (!container) return;
 
-            const img = container.querySelector(`img[data-req-id="${request.reqId}"]`);
-            if (img) {
+            const imageElement = container.querySelector(`img[data-req-id="${request.reqId}"]`);
+            if (imageElement) {
                 if (request.base64) {
-                    img.src = request.base64;
-                    img.classList.remove('loading');
-                    img.style.minHeight = 'auto';
+                    imageElement.src = request.base64;
+                    imageElement.classList.remove('loading');
+                    imageElement.style.minHeight = 'auto';
                 } else {
-                    img.style.background = '#ffebee';
-                    img.alt = 'Failed to load';
+                    imageElement.style.background = '#ffebee';
+                    imageElement.alt = 'Failed to load';
                 }
             }
         }

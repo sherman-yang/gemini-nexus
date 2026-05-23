@@ -52,10 +52,10 @@ describe('SettingsController', () => {
     it('cleans account indices before saving and reflects the saved value in the form', async () => {
         const { saveAccountIndicesToStorage } = await import('../../../shared/messaging/index.js');
         const controller = new SettingsController();
-        const data = controller.view.getFormData();
-        data.accountIndices = '0, abc, 2';
+        const formData = controller.view.getFormData();
+        formData.accountIndices = '0, abc, 2';
 
-        controller.saveSettings(data);
+        controller.saveSettings(formData);
 
         expect(saveAccountIndicesToStorage).toHaveBeenCalledWith('0,2');
         expect(document.getElementById('account-indices-input').value).toBe('0,2');
@@ -65,8 +65,8 @@ describe('SettingsController', () => {
         const { saveCustomSelectionToolsToStorage } =
             await import('../../../shared/messaging/index.js');
         const controller = new SettingsController();
-        const data = controller.view.getFormData();
-        data.customSelectionTools = [
+        const formData = controller.view.getFormData();
+        formData.customSelectionTools = [
             {
                 id: 'formal',
                 name: ' Formal ',
@@ -81,7 +81,7 @@ describe('SettingsController', () => {
             },
         ];
 
-        controller.saveSettings(data);
+        controller.saveSettings(formData);
 
         expect(saveCustomSelectionToolsToStorage).toHaveBeenCalledWith([
             {

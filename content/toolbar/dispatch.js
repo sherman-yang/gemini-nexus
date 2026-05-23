@@ -4,7 +4,6 @@
             this.controller = controller;
         }
 
-        // Accessors to controller components
         get ui() {
             return this.controller.ui;
         }
@@ -18,7 +17,7 @@
             return this.controller.imageDetector;
         }
 
-        async dispatch(actionType, data) {
+        async dispatch(actionType, actionPayload) {
             const currentModel = this.ui.getSelectedModel();
 
             try {
@@ -28,8 +27,8 @@
                             navigator.clipboard
                                 .writeText(this.controller.currentSelection)
                                 .then(() => this.ui.showCopySelectionFeedback(true))
-                                .catch((err) => {
-                                    console.error('Failed to copy text:', err);
+                                .catch((clipboardError) => {
+                                    console.error('Failed to copy text:', clipboardError);
                                     this.ui.showCopySelectionFeedback(false);
                                 });
                         }
@@ -38,59 +37,72 @@
                     case 'image_analyze':
                     case 'image_describe':
                         {
-                            const img = this.imageDetector.getCurrentImage();
-                            if (!img) return;
+                            const currentImage = this.imageDetector.getCurrentImage();
+                            if (!currentImage) return;
 
-                            const imgUrl = await this._resolveImageUrl(img);
-                            const rect = img.getBoundingClientRect();
+                            const imageUrl = await this._resolveImageUrl(currentImage);
+                            const imageRect = currentImage.getBoundingClientRect();
 
                             this.ui.hideImageButton();
                             this.controller.lastSessionId = null;
-                            // Use unified handler with 'analyze' mode which prompts for description
-                            this.actions.handleImagePrompt(imgUrl, rect, 'analyze', currentModel);
+                            this.actions.handleImagePrompt(
+                                imageUrl,
+                                imageRect,
+                                'analyze',
+                                currentModel
+                            );
                         }
                         break;
 
                     case 'image_chat':
                         {
-                            const img = this.imageDetector.getCurrentImage();
-                            if (!img) return;
+                            const currentImage = this.imageDetector.getCurrentImage();
+                            if (!currentImage) return;
 
-                            const imgUrl = await this._resolveImageUrl(img);
-                            const rect = img.getBoundingClientRect();
+                            const imageUrl = await this._resolveImageUrl(currentImage);
+                            const imageRect = currentImage.getBoundingClientRect();
 
                             this.ui.hideImageButton();
                             this.controller.lastSessionId = null;
-                            this.actions.handleImageChat(imgUrl, rect);
+                            this.actions.handleImageChat(imageUrl, imageRect);
                         }
                         break;
 
                     case 'image_extract':
                         {
-                            const img = this.imageDetector.getCurrentImage();
-                            if (!img) return;
+                            const currentImage = this.imageDetector.getCurrentImage();
+                            if (!currentImage) return;
 
-                            const imgUrl = await this._resolveImageUrl(img);
-                            const rect = img.getBoundingClientRect();
+                            const imageUrl = await this._resolveImageUrl(currentImage);
+                            const imageRect = currentImage.getBoundingClientRect();
 
                             this.ui.hideImageButton();
                             this.controller.lastSessionId = null;
-                            // Use 'ocr' mode to prompt for text extraction
-                            this.actions.handleImagePrompt(imgUrl, rect, 'ocr', currentModel);
+                            this.actions.handleImagePrompt(
+                                imageUrl,
+                                imageRect,
+                                'ocr',
+                                currentModel
+                            );
                         }
                         break;
 
                     case 'image_translate':
                         {
-                            const img = this.imageDetector.getCurrentImage();
-                            if (!img) return;
+                            const currentImage = this.imageDetector.getCurrentImage();
+                            if (!currentImage) return;
 
-                            const imgUrl = await this._resolveImageUrl(img);
-                            const rect = img.getBoundingClientRect();
+                            const imageUrl = await this._resolveImageUrl(currentImage);
+                            const imageRect = currentImage.getBoundingClientRect();
 
                             this.ui.hideImageButton();
                             this.controller.lastSessionId = null;
-                            this.actions.handleImagePrompt(imgUrl, rect, 'translate', currentModel);
+                            this.actions.handleImagePrompt(
+                                imageUrl,
+                                imageRect,
+                                'translate',
+                                currentModel
+                            );
                         }
                         break;
 
@@ -100,11 +112,11 @@
                     case 'image_upscale':
                     case 'image_expand':
                         {
-                            const img = this.imageDetector.getCurrentImage();
-                            if (!img) return;
+                            const currentImage = this.imageDetector.getCurrentImage();
+                            if (!currentImage) return;
 
-                            const imgUrl = await this._resolveImageUrl(img);
-                            const rect = img.getBoundingClientRect();
+                            const imageUrl = await this._resolveImageUrl(currentImage);
+                            const imageRect = currentImage.getBoundingClientRect();
 
                             this.ui.hideImageButton();
                             this.controller.lastSessionId = null;
@@ -115,20 +127,20 @@
                             if (actionType === 'image_remove_watermark') mode = 'remove_watermark';
                             if (actionType === 'image_expand') mode = 'expand';
 
-                            this.actions.handleImagePrompt(imgUrl, rect, mode, currentModel);
+                            this.actions.handleImagePrompt(imageUrl, imageRect, mode, currentModel);
                         }
                         break;
 
                     case 'ask':
                         if (this.controller.currentSelection) {
-                            this.controller.hide(); // Hides small toolbar
+                            this.controller.hide();
                             this.ui.showAskWindow(
                                 this.controller.lastRect,
                                 this.controller.currentSelection,
                                 window.GeminiToolbarStrings?.ask || 'Ask Gemini',
                                 this.controller.lastMousePoint
                             );
-                            this.controller.visible = true; // Mark window as visible
+                            this.controller.visible = true;
                         }
                         break;
 
@@ -164,10 +176,10 @@
                         break;
 
                     case 'custom_selection_tool':
-                        if (!this.controller.currentSelection || !data) return;
+                        if (!this.controller.currentSelection || !actionPayload) return;
                         this.controller.lastSessionId = null;
                         this.actions.handleCustomSelectionTool(
-                            data,
+                            actionPayload,
                             this.controller.currentSelection,
                             this.controller.lastRect,
                             currentModel,
@@ -176,15 +188,15 @@
                         break;
 
                     case 'insert_result':
-                        this._handleInsert(data, false);
+                        this._handleInsert(actionPayload, false);
                         break;
 
                     case 'replace_result':
-                        this._handleInsert(data, true);
+                        this._handleInsert(actionPayload, true);
                         break;
 
                     case 'submit_ask':
-                        const question = data;
+                        const question = actionPayload;
                         const context = this.controller.currentSelection;
                         if (question) {
                             this.actions.handleSubmitAsk(
@@ -233,13 +245,13 @@
         }
 
         async _showImageLoadError() {
-            const img = this.imageDetector.getCurrentImage();
-            const rect = img?.getBoundingClientRect?.() || this.controller.lastRect;
-            if (!rect) return;
+            const currentImage = this.imageDetector.getCurrentImage();
+            const imageRect = currentImage?.getBoundingClientRect?.() || this.controller.lastRect;
+            if (!imageRect) return;
 
             this.ui.hideImageButton();
             await this.ui.showAskWindow(
-                rect,
+                imageRect,
                 null,
                 window.GeminiToolbarStrings?.imageTools || 'Image tools'
             );
@@ -249,8 +261,8 @@
             );
         }
 
-        async _resolveImageUrl(img) {
-            const url = img?.currentSrc || img?.src || '';
+        async _resolveImageUrl(imageElement) {
+            const url = imageElement?.currentSrc || imageElement?.src || '';
             if (url.startsWith('blob:')) {
                 return await this._blobUrlToDataUrl(url);
             }
@@ -293,6 +305,5 @@
         }
     }
 
-    // Export to Window
     window.GeminiToolbarDispatcher = ToolbarDispatcher;
 })();

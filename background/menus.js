@@ -154,6 +154,5 @@ export function setupContextMenus() {
     createContextMenus();
     chrome.runtime.onInstalled?.addListener?.(createContextMenus);
 
-    // Handle Context Menu Clicks
     chrome.contextMenus.onClicked.addListener(dispatchContextMenuAction);
 }

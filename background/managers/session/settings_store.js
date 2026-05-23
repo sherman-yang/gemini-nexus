@@ -37,31 +37,27 @@ export async function getConnectionSettings() {
 
     let activeApiKey = stored.geminiApiKey || '';
 
-    // Handle API Key Rotation (Comma separated) for Official Gemini
     if (provider === 'official' && activeApiKey.includes(',')) {
-        const keys = activeApiKey
+        const apiKeys = activeApiKey
             .split(',')
-            .map((k) => k.trim())
-            .filter((k) => k);
+            .map((apiKey) => apiKey.trim())
+            .filter((apiKey) => apiKey);
 
-        if (keys.length > 0) {
+        if (apiKeys.length > 0) {
             let pointer = stored.geminiApiKeyPointer || 0;
 
-            // Reset pointer if out of bounds (e.g. keys removed)
-            if (typeof pointer !== 'number' || pointer >= keys.length || pointer < 0) {
+            if (typeof pointer !== 'number' || pointer >= apiKeys.length || pointer < 0) {
                 pointer = 0;
             }
 
-            activeApiKey = keys[pointer];
+            activeApiKey = apiKeys[pointer];
 
-            // Advance pointer for next call
-            const nextPointer = (pointer + 1) % keys.length;
+            const nextPointer = (pointer + 1) % apiKeys.length;
             await chrome.storage.local.set({ geminiApiKeyPointer: nextPointer });
 
             debugLog(`[Gemini Nexus] Rotating Official API Key (Index: ${pointer})`);
         }
     } else {
-        // Trim single key just in case
         activeApiKey = activeApiKey.trim();
     }
 
@@ -83,7 +79,6 @@ export async function getConnectionSettings() {
         openaiThinkingLevel: stored.geminiOpenaiThinkingLevel || DEFAULT_THINKING_LEVEL,
         openaiUseResponsesApi: openaiSettings.useResponsesApi,
         openaiWebSearch: openaiSettings.webSearch,
-        // Context management
         contextMode: stored.geminiContextMode || DEFAULT_CONTEXT_MODE,
         contextRecentTurns: stored.geminiContextRecentTurns || DEFAULT_CONTEXT_RECENT_TURNS,
     };

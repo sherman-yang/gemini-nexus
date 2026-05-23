@@ -15,24 +15,24 @@ export function handleImageFetchResult(request, { ui, imageManager }) {
 }
 
 export async function handleGeneratedImageFetchResult(request) {
-    const img = document.querySelector(`img[data-req-id="${request.reqId}"]`);
-    if (!img) return;
+    const imageElement = document.querySelector(`img[data-req-id="${request.reqId}"]`);
+    if (!imageElement) return;
 
     if (request.base64) {
         try {
-            img.src = await WatermarkRemover.process(request.base64);
+            imageElement.src = await WatermarkRemover.process(request.base64);
         } catch (error) {
             console.warn('Watermark removal failed, using original', error);
-            img.src = request.base64;
+            imageElement.src = request.base64;
         }
 
-        img.classList.remove('loading');
+        imageElement.classList.remove('loading');
         return;
     }
 
-    img.classList.remove('loading');
-    img.classList.add('load-error');
-    img.alt = 'Failed to load image';
+    imageElement.classList.remove('loading');
+    imageElement.classList.add('load-error');
+    imageElement.alt = 'Failed to load image';
     console.warn('Generated image load failed:', request.error);
 }
 

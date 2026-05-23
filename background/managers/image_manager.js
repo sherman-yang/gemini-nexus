@@ -1,5 +1,4 @@
 export class ImageManager {
-    // Fetch image from a URL or Data URI
     async fetchImage(url) {
         try {
             if (url.startsWith('data:')) {
@@ -18,7 +17,6 @@ export class ImageManager {
             if (!response.ok) throw new Error('Fetch failed: ' + response.statusText);
 
             const blob = await response.blob();
-            // Convert blob to base64
             const base64 = await new Promise((resolve, reject) => {
                 const reader = new FileReader();
                 reader.onloadend = () => resolve(reader.result);
@@ -40,7 +38,6 @@ export class ImageManager {
         }
     }
 
-    // Internal helper for capturing visible tab
     _captureTab(windowId) {
         return new Promise((resolve) => {
             // Use explicit windowId if provided to ensure correct window is captured
@@ -55,7 +52,6 @@ export class ImageManager {
         });
     }
 
-    // Capture the visible tab and return base64
     async captureScreenshot(windowId) {
         const dataUrl = await this._captureTab(windowId);
 
@@ -74,7 +70,6 @@ export class ImageManager {
         };
     }
 
-    // Used when content script selects an area
     async captureArea(area, windowId) {
         const dataUrl = await this._captureTab(windowId);
 
@@ -82,7 +77,6 @@ export class ImageManager {
             return null;
         }
 
-        // Return data to UI for cropping
         return {
             action: 'CROP_SCREENSHOT',
             image: dataUrl,

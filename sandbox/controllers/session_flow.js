@@ -35,38 +35,37 @@ export class SessionFlowController {
 
         this.ui.clearChatHistory();
         const compressionNoticeIndex = this.getCompressionNoticeIndex(session);
-        session.messages.forEach((msg, index) => {
-            if (this.shouldSkipRestoredMessage(msg)) return;
+        session.messages.forEach((message, index) => {
+            if (this.shouldSkipRestoredMessage(message)) return;
 
             if (index === compressionNoticeIndex) {
                 this.appendRestoredCompressionNotice();
             }
 
             let attachment = null;
-            if (msg.role === 'user') attachment = msg.attachments || msg.image;
-            if (msg.role === 'ai') attachment = msg.generatedImages;
-            // Pass msg.thoughts to appendMessage
+            if (message.role === 'user') attachment = message.attachments || message.image;
+            if (message.role === 'ai') attachment = message.generatedImages;
             appendMessage(
                 this.ui.historyDiv,
-                msg.text,
-                msg.role,
+                message.text,
+                message.role,
                 attachment,
-                msg.thoughts,
-                msg.sources,
+                message.thoughts,
+                message.sources,
                 {
-                    kind: this.getMessageKind(msg),
-                    toolName: this.getRestoredToolName(msg),
-                    step: this.getRestoredToolStep(msg),
-                    toolStatus: this.getRestoredToolStatus(msg),
-                    toolCallText: this.getRestoredToolCallText(msg),
-                    callIndex: this.getRestoredToolCallIndex(msg),
-                    callCount: this.getRestoredToolCallCount(msg),
-                    suppressCopy: msg.suppressCopy === true,
+                    kind: this.getMessageKind(message),
+                    toolName: this.getRestoredToolName(message),
+                    step: this.getRestoredToolStep(message),
+                    toolStatus: this.getRestoredToolStatus(message),
+                    toolCallText: this.getRestoredToolCallText(message),
+                    callIndex: this.getRestoredToolCallIndex(message),
+                    callCount: this.getRestoredToolCallCount(message),
+                    suppressCopy: message.suppressCopy === true,
                     isCollapsed: true,
-                    thoughtsDurationSeconds: msg.thoughtsDurationSeconds,
+                    thoughtsDurationSeconds: message.thoughtsDurationSeconds,
                     autoScroll: false,
                     onEdit:
-                        msg.role === 'user' && this.getMessageKind(msg) !== 'tool-output'
+                        message.role === 'user' && this.getMessageKind(message) !== 'tool-output'
                             ? this.app.prompt.getMessageEditOptions(index).onEdit
                             : null,
                 }

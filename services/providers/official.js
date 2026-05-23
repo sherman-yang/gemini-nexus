@@ -92,18 +92,20 @@ function addAttachmentParts(parts, attachments) {
     });
 }
 
-function buildMessageContent(msg, targetModel) {
+function buildMessageContent(historyMessage, targetModel) {
     void targetModel;
-    const fallbackRole = msg?.role === 'ai' ? 'model' : 'user';
+    const fallbackRole = historyMessage?.role === 'ai' ? 'model' : 'user';
 
-    if (msg?.kind === 'tool-output' && msg.officialFunctionResponseBatchId) {
+    if (historyMessage?.kind === 'tool-output' && historyMessage.officialFunctionResponseBatchId) {
         return { role: fallbackRole, parts: [] };
     }
 
-    const nativeContent = isPlainObject(msg?.officialContent) ? msg.officialContent : null;
+    const nativeContent = isPlainObject(historyMessage?.officialContent)
+        ? historyMessage.officialContent
+        : null;
     const nativeParts = nativeContent
         ? cloneOfficialParts(nativeContent.parts)
-        : cloneOfficialParts(msg?.officialParts);
+        : cloneOfficialParts(historyMessage?.officialParts);
 
     if (nativeParts.length > 0) {
         return {
@@ -117,21 +119,21 @@ function buildMessageContent(msg, targetModel) {
 
     const parts = [];
 
-    if (msg.role === 'ai') {
+    if (historyMessage.role === 'ai') {
         // Model turn. For Gemini 3 function-calling, thought signatures must
         // stay attached to their original native parts; legacy text-only
         // history can only preserve a single signature on the text part.
-        if (msg.text !== undefined) {
-            parts.push({ text: msg.text });
+        if (historyMessage.text !== undefined) {
+            parts.push({ text: historyMessage.text });
         }
     } else {
         // User turn
-        if (msg.text) parts.push({ text: msg.text });
+        if (historyMessage.text) parts.push({ text: historyMessage.text });
 
-        if (Array.isArray(msg.attachments) && msg.attachments.length > 0) {
-            addAttachmentParts(parts, msg.attachments);
-        } else if (msg.image && Array.isArray(msg.image)) {
-            addAttachmentParts(parts, msg.image);
+        if (Array.isArray(historyMessage.attachments) && historyMessage.attachments.length > 0) {
+            addAttachmentParts(parts, historyMessage.attachments);
+        } else if (historyMessage.image && Array.isArray(historyMessage.image)) {
+            addAttachmentParts(parts, historyMessage.image);
         }
     }
 
@@ -230,18 +232,16 @@ export async function sendOfficialMessage(
     if (!apiKey) throw new Error('API Key is missing.');
     if (!baseUrl) baseUrl = DEFAULT_OFFICIAL_BASE_URL;
 
-    // Dynamic Model Selection: Map UI values to API IDs
     let targetModel = modelName;
 
     if (!targetModel) {
         const configured = (configuredModels || '')
             .split(',')
-            .map((m) => m.trim())
+            .map((configuredModel) => configuredModel.trim())
             .filter(Boolean);
         targetModel = configured[0] || DEFAULT_OFFICIAL_MODEL;
     }
 
-    // Explicit Mapping logic
     targetModel = normalizeOfficialModel(targetModel);
 
     debugLog(`[Gemini Official API] Requesting ${targetModel} (Original: ${modelName})...`);
@@ -252,15 +252,14 @@ export async function sendOfficialMessage(
     const contents = [];
 
     if (history && Array.isArray(history)) {
-        history.forEach((msg) => {
-            const content = buildMessageContent(msg, targetModel);
+        history.forEach((historyMessage) => {
+            const content = buildMessageContent(historyMessage, targetModel);
             if (content.parts.length > 0) {
                 contents.push(content);
             }
         });
     }
 
-    // Add Current Prompt
     const configuredCurrentParts = cloneOfficialParts(config?.officialUserParts);
     const currentParts = configuredCurrentParts.length > 0 ? configuredCurrentParts : [];
     if (configuredCurrentParts.length === 0 && prompt) currentParts.push({ text: prompt });
@@ -296,7 +295,6 @@ export async function sendOfficialMessage(
         };
     }
 
-    // Add System Instruction if present
     if (systemInstruction) {
         payload.systemInstruction = {
             parts: [{ text: systemInstruction }],
@@ -323,8 +321,9 @@ export async function sendOfficialMessage(
     const sources = [];
     const seenSourceUrls = new Set();
 
-    await readSseJson(response, (data) => {
-        const candidate = data.candidates && data.candidates[0] ? data.candidates[0] : null;
+    await readSseJson(response, (streamEvent) => {
+        const candidate =
+            streamEvent.candidates && streamEvent.candidates[0] ? streamEvent.candidates[0] : null;
 
         if (candidate && candidate.groundingMetadata) {
             extractGroundingSources(candidate.groundingMetadata).forEach((source) => {

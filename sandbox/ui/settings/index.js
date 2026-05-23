@@ -66,7 +66,7 @@ export class SettingsController {
 
         this.connectionData = {
             provider: DEFAULT_PROVIDER,
-            useOfficialApi: false, // Legacy support
+            useOfficialApi: false,
             officialBaseUrl: DEFAULT_OFFICIAL_BASE_URL,
             apiKey: '',
             officialModel: DEFAULT_OFFICIAL_MODELS,
@@ -88,7 +88,7 @@ export class SettingsController {
 
         this.view = new SettingsView({
             onOpen: () => this.handleOpen(),
-            onSave: (data) => this.saveSettings(data),
+            onSave: (formData) => this.saveSettings(formData),
             onReset: () => this.resetSettings(),
 
             onThemeChange: (theme) => this.setTheme(theme),
@@ -152,11 +152,11 @@ export class SettingsController {
         this.refreshGithubMetadata();
     }
 
-    saveSettings(data) {
+    saveSettings(formData) {
         const previousProvider =
             this.connectionData.provider ||
             (this.connectionData.useOfficialApi ? 'official' : 'web');
-        const generalSettings = buildGeneralSettingsForSave(data);
+        const generalSettings = buildGeneralSettingsForSave(formData);
 
         this.shortcuts = generalSettings.shortcuts;
         saveShortcutsToStorage(this.shortcuts);
@@ -184,13 +184,15 @@ export class SettingsController {
         this.sidePanelScope = generalSettings.sidePanelScope;
         saveSidePanelScopeToStorage(this.sidePanelScope);
 
-        this.contextSettings = buildContextSettingsForSave(data);
+        this.contextSettings = buildContextSettingsForSave(formData);
         saveContextSettingsToStorage(this.contextSettings);
 
-        this.connectionData = buildConnectionSettingsForSave(data.connection, this.connectionData);
+        this.connectionData = buildConnectionSettingsForSave(
+            formData.connection,
+            this.connectionData
+        );
         saveConnectionSettingsToStorage(this.connectionData);
 
-        // Notify app of critical setting changes
         if (this.callbacks.onSettingsChanged) {
             this.callbacks.onSettingsChanged(this.connectionData, {
                 providerChanged: previousProvider !== this.connectionData.provider,
@@ -281,7 +283,6 @@ export class SettingsController {
     updateConnectionSettings(settings) {
         this.connectionData = { ...this.connectionData, ...settings };
 
-        // Legacy compat: If provider missing but useOfficialApi is true, set to official
         if (!this.connectionData.provider) {
             if (settings.useOfficialApi === true) this.connectionData.provider = 'official';
             else this.connectionData.provider = DEFAULT_PROVIDER;
@@ -322,8 +323,8 @@ export class SettingsController {
             return;
         }
 
-        const err = result && result.error ? result.error : t('mcpConnectionFailed');
-        this.view.connection.setMcpTestStatus(formatT('mcpFailed', { error: err }), true);
+        const errorMessage = result && result.error ? result.error : t('mcpConnectionFailed');
+        this.view.connection.setMcpTestStatus(formatT('mcpFailed', { error: errorMessage }), true);
     }
 
     updateMcpToolsResult(result) {
@@ -335,8 +336,11 @@ export class SettingsController {
             return;
 
         if (!result || result.ok !== true) {
-            const err = result && result.error ? result.error : t('mcpFetchToolsFailed');
-            this.view.connection.setMcpTestStatus(formatT('mcpFailed', { error: err }), true);
+            const errorMessage = result && result.error ? result.error : t('mcpFetchToolsFailed');
+            this.view.connection.setMcpTestStatus(
+                formatT('mcpFailed', { error: errorMessage }),
+                true
+            );
             return;
         }
 

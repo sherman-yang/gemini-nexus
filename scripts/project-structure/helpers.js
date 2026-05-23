@@ -146,6 +146,7 @@ export function collectI18nKeysFromSource(source) {
         /data-i18n(?:-title|-placeholder)?="([^"]+)"/g,
         /t\(\s*['"]([^'"]+)['"]\s*\)/g,
         /formatT\(\s*['"]([^'"]+)['"]\s*,/g,
+        /createSettingsHelpButton\(\s*['"]([^'"]+)['"]\s*\)/g,
     ];
 
     for (const pattern of patterns) {

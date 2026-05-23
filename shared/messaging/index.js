@@ -156,11 +156,11 @@ export function requestConnectionSettingsFromStorage() {
     window.parent.postMessage({ action: 'GET_CONNECTION_SETTINGS' }, '*');
 }
 
-export function saveConnectionSettingsToStorage(data) {
+export function saveConnectionSettingsToStorage(connectionSettings) {
     window.parent.postMessage(
         {
             action: 'SAVE_CONNECTION_SETTINGS',
-            payload: data,
+            payload: connectionSettings,
         },
         '*'
     );

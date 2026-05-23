@@ -39,9 +39,7 @@ describe('settings templates', () => {
             ])
         );
         expect(helpButtons.every((button) => button.type === 'button')).toBe(true);
-        expect(helpButtons.every((button) => button.getAttribute('aria-label') === 'Help')).toBe(
-            true
-        );
+        expect(helpButtons.every((button) => button.title.length > 0)).toBe(true);
     });
 
     it('uses hidden attributes instead of inline display styles for collapsed panels', () => {
@@ -108,6 +106,38 @@ describe('settings templates', () => {
             .map(([name, id]) => `${name}:${id}`);
 
         expect(missingIds).toEqual([]);
+    });
+
+    it('uses keyboard-reachable sidebar tabs for the split settings navigation', () => {
+        document.body.innerHTML = SettingsPageTemplate;
+
+        const tabs = [...document.querySelectorAll('.settings-tab')];
+
+        expect(tabs).toHaveLength(5);
+        expect(tabs.every((tab) => tab.getAttribute('role') === 'button')).toBe(true);
+        expect(tabs.every((tab) => tab.getAttribute('tabindex') === '0')).toBe(true);
+        expect(tabs.map((tab) => tab.dataset.tab)).toEqual([
+            'connection',
+            'general',
+            'appearance',
+            'shortcuts',
+            'about',
+        ]);
+    });
+
+    it('labels the connection settings navigation item as API with a key icon', () => {
+        document.body.innerHTML = SettingsPageTemplate;
+
+        const apiTab = document.querySelector('.settings-tab[data-tab="connection"]');
+
+        expect(apiTab.querySelector('.tab-label').textContent).toBe('API');
+        expect(apiTab.querySelector('.tab-label').getAttribute('data-i18n')).toBe('apiSettings');
+        expect(apiTab.querySelector('.tab-icon').innerHTML).toContain(
+            'M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z'
+        );
+        expect(apiTab.querySelector('.tab-icon').innerHTML).toContain(
+            '<circle cx="16.5" cy="7.5" r=".5" fill="currentColor"></circle>'
+        );
     });
 
     it('shares the recent-turns default with the app-wide setting default', () => {

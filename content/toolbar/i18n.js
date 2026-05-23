@@ -218,7 +218,6 @@
                         : `Correct the grammar and spelling of the following text. Output ONLY the corrected text without any explanation:\n\n"${text}"`,
             },
 
-            // Loading Messages
             loading: {
                 ocr: isZh ? '正在识别文字...' : 'Extracting text...',
                 translate: isZh ? '正在翻译...' : 'Translating...',

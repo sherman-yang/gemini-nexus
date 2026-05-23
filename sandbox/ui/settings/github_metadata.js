@@ -4,8 +4,8 @@ async function readResponseField(response, field) {
     if (!response?.ok) return null;
 
     try {
-        const data = await response.json();
-        return data?.[field] ?? null;
+        const metadata = await response.json();
+        return metadata?.[field] ?? null;
     } catch {
         return null;
     }

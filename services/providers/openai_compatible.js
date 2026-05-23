@@ -92,9 +92,9 @@ export async function sendOpenAIMessage(
     let fullText = '';
     let fullThoughts = ''; // Not standard in OpenAI, but some models (DeepSeek R1) might output <think> tags in content
 
-    await readSseJson(response, (data) => {
-        if (data.choices && data.choices.length > 0) {
-            const choice = data.choices[0];
+    await readSseJson(response, (streamEvent) => {
+        if (streamEvent.choices && streamEvent.choices.length > 0) {
+            const choice = streamEvent.choices[0];
             const delta = choice.delta || {};
 
             // Standard Content
@@ -195,48 +195,48 @@ async function sendOpenAIResponsesMessage(
     let fullThoughts = '';
     let streamError = null;
 
-    await readSseJson(response, (data) => {
-        if (data.error?.message) {
-            streamError = data.error.message;
+    await readSseJson(response, (streamEvent) => {
+        if (streamEvent.error?.message) {
+            streamError = streamEvent.error.message;
             return;
         }
 
-        if (data.type === 'response.output_text.delta' && data.delta) {
-            fullText += data.delta;
+        if (streamEvent.type === 'response.output_text.delta' && streamEvent.delta) {
+            fullText += streamEvent.delta;
             onUpdate(fullText, fullThoughts);
             return;
         }
 
         if (
-            (data.type === 'response.reasoning_summary_text.delta' ||
-                data.type === 'response.reasoning_text.delta') &&
-            data.delta
+            (streamEvent.type === 'response.reasoning_summary_text.delta' ||
+                streamEvent.type === 'response.reasoning_text.delta') &&
+            streamEvent.delta
         ) {
-            fullThoughts += data.delta;
+            fullThoughts += streamEvent.delta;
             onUpdate(fullText, fullThoughts);
             return;
         }
 
         if (
-            (data.type === 'response.reasoning_summary_text.done' ||
-                data.type === 'response.reasoning_text.done') &&
-            data.text &&
+            (streamEvent.type === 'response.reasoning_summary_text.done' ||
+                streamEvent.type === 'response.reasoning_text.done') &&
+            streamEvent.text &&
             !fullThoughts
         ) {
-            fullThoughts = data.text;
+            fullThoughts = streamEvent.text;
             onUpdate(fullText, fullThoughts);
             return;
         }
 
-        if (data.type === 'response.output_text.annotation.added') {
-            extractSourcesFromAnnotation(data.annotation, sources, seenSourceUrls);
+        if (streamEvent.type === 'response.output_text.annotation.added') {
+            extractSourcesFromAnnotation(streamEvent.annotation, sources, seenSourceUrls);
             return;
         }
 
-        if (data.type === 'response.output_item.done') {
-            extractSourcesFromResponseItem(data.item, sources, seenSourceUrls);
+        if (streamEvent.type === 'response.output_item.done') {
+            extractSourcesFromResponseItem(streamEvent.item, sources, seenSourceUrls);
             if (!fullThoughts) {
-                const completedThoughts = extractReasoningSummaryFromResponseItem(data.item);
+                const completedThoughts = extractReasoningSummaryFromResponseItem(streamEvent.item);
                 if (completedThoughts) {
                     fullThoughts = completedThoughts;
                     onUpdate(fullText, fullThoughts);
@@ -245,15 +245,15 @@ async function sendOpenAIResponsesMessage(
             return;
         }
 
-        if (data.type === 'response.completed' && data.response) {
-            data.response.output?.forEach((item) =>
+        if (streamEvent.type === 'response.completed' && streamEvent.response) {
+            streamEvent.response.output?.forEach((item) =>
                 extractSourcesFromResponseItem(item, sources, seenSourceUrls)
             );
             if (!fullThoughts) {
-                fullThoughts = extractReasoningSummaryFromCompletedResponse(data.response);
+                fullThoughts = extractReasoningSummaryFromCompletedResponse(streamEvent.response);
             }
             if (!fullText) {
-                fullText = extractTextFromCompletedResponse(data.response);
+                fullText = extractTextFromCompletedResponse(streamEvent.response);
             }
             onUpdate(fullText, fullThoughts);
         }

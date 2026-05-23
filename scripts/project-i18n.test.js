@@ -41,6 +41,7 @@ describe('project i18n', () => {
             'sandbox/ui/templates/settings/appearance.js',
             'sandbox/ui/templates/settings/connection.js',
             'sandbox/ui/templates/settings/general.js',
+            'sandbox/ui/templates/settings/help_button.js',
             'sandbox/ui/templates/settings/index.js',
             'sandbox/ui/templates/settings/shortcuts.js',
         ];

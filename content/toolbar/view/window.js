@@ -148,7 +148,6 @@
 
             Layout.positionElement(this.elements.askWindow, rect, true, mousePoint);
 
-            // Reset Content
             this.elements.windowTitle.textContent = title || getDefaultTitle();
             if (contextText) {
                 this.elements.contextPreview.textContent = contextText;
@@ -161,7 +160,6 @@
             this.elements.resultText.innerHTML = '';
             this.translationTargets.hide();
 
-            // Hide Footer initially
             if (this.elements.windowFooter) this.elements.windowFooter.classList.add('hidden');
 
             this.elements.askWindow.classList.add('visible');
@@ -185,7 +183,6 @@
                 this.elements.resultText.innerHTML = '';
             }
 
-            // Show Footer with Stop button
             if (this.elements.windowFooter) this.elements.windowFooter.classList.remove('hidden');
             if (this.elements.footerStop) this.elements.footerStop.classList.remove('hidden');
             if (this.elements.footerActions) this.elements.footerActions.classList.add('hidden');
@@ -199,7 +196,6 @@
             const resultArea = this.elements.resultArea;
             let shouldScrollBottom = false;
 
-            // Only auto-scroll to bottom during streaming
             if (resultArea && isStreaming) {
                 const threshold = 50;
                 const distanceToBottom =
@@ -207,16 +203,13 @@
                 shouldScrollBottom = distanceToBottom <= threshold;
             }
 
-            // Content is now always HTML rendered via Bridge (using marked/katex/highlight.js)
             this.elements.resultText.innerHTML = htmlContent;
 
-            // Ensure Footer is visible
             if (this.elements.windowFooter) this.elements.windowFooter.classList.remove('hidden');
 
             this.updateStreamingState(isStreaming);
 
             if (!isStreaming && !htmlContent) {
-                // Empty and not streaming
                 if (this.elements.windowFooter) this.elements.windowFooter.classList.add('hidden');
             }
 
@@ -226,7 +219,6 @@
                         resultArea.scrollTop = resultArea.scrollHeight;
                     }
                 } else {
-                    // Finished: Scroll to top
                     resultArea.scrollTop = 0;
                 }
             }
@@ -243,7 +235,6 @@
                 if (this.elements.footerStop) this.elements.footerStop.classList.add('hidden');
                 if (this.elements.footerActions)
                     this.elements.footerActions.classList.remove('hidden');
-                // Reset Copy Icon
                 if (this.elements.buttons.copy) this.elements.buttons.copy.innerHTML = ICONS.COPY;
             }
         }
@@ -255,7 +246,6 @@
             this.elements.resultText.replaceChildren(card);
             appendErrorText(body, text);
 
-            // Show Footer with Actions (Retry is in footer-left)
             if (this.elements.windowFooter) this.elements.windowFooter.classList.remove('hidden');
             if (this.elements.footerStop) this.elements.footerStop.classList.add('hidden');
             if (this.elements.footerActions) this.elements.footerActions.classList.remove('hidden');

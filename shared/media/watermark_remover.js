@@ -16,15 +16,16 @@ function getWatermarkBox(width, height) {
 
 function loadImage(src) {
     return new Promise((resolve, reject) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = () => reject(new Error('Unable to load image for watermark removal'));
-        img.src = src;
+        const imageElement = new Image();
+        imageElement.onload = () => resolve(imageElement);
+        imageElement.onerror = () =>
+            reject(new Error('Unable to load image for watermark removal'));
+        imageElement.src = src;
     });
 }
 
-function averageSampleColor(ctx, x, y) {
-    const imageData = ctx.getImageData(x, y, SAMPLE_SIZE, SAMPLE_SIZE);
+function averageSampleColor(canvasContext, x, y) {
+    const imageData = canvasContext.getImageData(x, y, SAMPLE_SIZE, SAMPLE_SIZE);
     const { data } = imageData;
     const count = data.length / 4;
     let r = 0;
@@ -44,7 +45,7 @@ function averageSampleColor(ctx, x, y) {
     };
 }
 
-function coverWatermark(ctx, canvas, width, height) {
+function coverWatermark(canvasContext, canvas, width, height) {
     const { size, margin } = getWatermarkBox(width, height);
     const x = width - margin - size;
     const y = height - margin - size;
@@ -56,19 +57,29 @@ function coverWatermark(ctx, canvas, width, height) {
     const sampleY = Math.max(0, fillY - SAMPLE_OFFSET_Y);
     const sampleX = Math.min(fillX, Math.max(0, width - SAMPLE_SIZE));
 
-    const { r, g, b } = averageSampleColor(ctx, sampleX, sampleY);
-    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-    ctx.fillRect(fillX, fillY, fillW, fillH);
+    const { r, g, b } = averageSampleColor(canvasContext, sampleX, sampleY);
+    canvasContext.fillStyle = `rgb(${r}, ${g}, ${b})`;
+    canvasContext.fillRect(fillX, fillY, fillW, fillH);
 
     if (fillX > fillW) {
-        ctx.drawImage(canvas, fillX - fillW, fillY, fillW, fillH, fillX, fillY, fillW, fillH);
+        canvasContext.drawImage(
+            canvas,
+            fillX - fillW,
+            fillY,
+            fillW,
+            fillH,
+            fillX,
+            fillY,
+            fillW,
+            fillH
+        );
     }
 }
 
 async function removeWatermark(base64Image) {
-    const img = await loadImage(base64Image);
-    const width = img.width;
-    const height = img.height;
+    const imageElement = await loadImage(base64Image);
+    const width = imageElement.width;
+    const height = imageElement.height;
 
     if (!width || !height) return base64Image;
 
@@ -76,11 +87,11 @@ async function removeWatermark(base64Image) {
     canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) return base64Image;
+    const canvasContext = canvas.getContext('2d', { willReadFrequently: true });
+    if (!canvasContext) return base64Image;
 
-    ctx.drawImage(img, 0, 0);
-    coverWatermark(ctx, canvas, width, height);
+    canvasContext.drawImage(imageElement, 0, 0);
+    coverWatermark(canvasContext, canvas, width, height);
     return canvas.toDataURL('image/png');
 }
 

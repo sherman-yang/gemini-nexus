@@ -14,19 +14,16 @@ class KeepAliveManager {
     }
 
     init() {
-        // Ensure alarm is set up
         chrome.alarms.get(ALARM_NAME, (alarm) => {
             if (!alarm) {
                 chrome.alarms.create(ALARM_NAME, { periodInMinutes: INTERVAL_MINUTES });
             }
         });
 
-        // Add listener (ensure single binding)
         if (!chrome.alarms.onAlarm.hasListener(this.boundOnAlarm)) {
             chrome.alarms.onAlarm.addListener(this.boundOnAlarm);
         }
 
-        // Perform initial check immediately on load
         this.performRotation();
     }
 
@@ -93,5 +90,4 @@ class KeepAliveManager {
     }
 }
 
-// Export singleton instance
 export const keepAliveManager = new KeepAliveManager();

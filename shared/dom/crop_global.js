@@ -1,11 +1,11 @@
 (function () {
     function cropImage(base64, area) {
         return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.onload = () => {
+            const imageElement = new Image();
+            imageElement.onload = () => {
                 const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
+                const canvasContext = canvas.getContext('2d');
+                if (!canvasContext) {
                     reject(new Error('Canvas 2D context is unavailable.'));
                     return;
                 }
@@ -14,8 +14,8 @@
                 canvas.width = area.width * scale;
                 canvas.height = area.height * scale;
 
-                ctx.drawImage(
-                    img,
+                canvasContext.drawImage(
+                    imageElement,
                     area.x * scale,
                     area.y * scale,
                     area.width * scale,
@@ -28,8 +28,8 @@
 
                 resolve(canvas.toDataURL('image/png'));
             };
-            img.onerror = () => reject(new Error('Failed to load image for cropping.'));
-            img.src = base64;
+            imageElement.onerror = () => reject(new Error('Failed to load image for cropping.'));
+            imageElement.src = base64;
         });
     }
 

@@ -152,7 +152,7 @@ async function sendStreamableHttpRpcRequest(conn, method, params, context, allow
     if (!conn.httpPostUrl) throw new Error('MCP Streamable HTTP not connected');
 
     const id = context.nextId();
-    const msg = {
+    const rpcRequest = {
         jsonrpc: '2.0',
         id,
         method,
@@ -165,7 +165,7 @@ async function sendStreamableHttpRpcRequest(conn, method, params, context, allow
             'Content-Type': 'application/json',
             Accept: STREAMABLE_HTTP_ACCEPT,
         }),
-        body: JSON.stringify(msg),
+        body: JSON.stringify(rpcRequest),
     });
 
     if (response.status === 404 && conn.sessionId && method !== 'initialize') {

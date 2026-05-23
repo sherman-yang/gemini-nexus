@@ -49,6 +49,12 @@
             display: none;
         }
 
+        .toolbar-logo {
+            width: 20px;
+            height: 20px;
+            display: block;
+        }
+
         .custom-selection-tools {
             display: flex;
             align-items: center;

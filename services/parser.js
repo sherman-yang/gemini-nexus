@@ -102,7 +102,6 @@ export function parseGeminiLine(line) {
                                 url = url.replace('http://', 'https://');
                             }
 
-                            // Add unique images.
                             if (!seenUrls.has(url)) {
                                 seenUrls.add(url);
                                 generatedImages.push({

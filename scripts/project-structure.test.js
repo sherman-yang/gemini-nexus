@@ -158,6 +158,7 @@ describe('project structure', () => {
         expect(readme).toContain('shared/ui/');
         expect(readme).toContain('shared/logging/');
         await expect(exists('README.zh-CN.md')).resolves.toBe(true);
+        await expect(exists('README.en.md')).resolves.toBe(false);
         expect(readme).toContain('README.zh-CN.md');
         expect(readme).toContain('### Project Overview');
         expect(readme).toContain('### Quick Start');

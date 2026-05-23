@@ -73,6 +73,17 @@ describe('project code hygiene', () => {
         );
     });
 
+    it('keeps toolbar template and style globals descriptive', async () => {
+        const templates = await readProjectFile('content/toolbar/templates.js');
+        const styleIndex = await readProjectFile('content/toolbar/styles/index.js');
+        const panelStyleIndex = await readProjectFile('content/toolbar/styles/panel/index.js');
+
+        expect(templates).not.toMatch(/\b(?:function\s+\w+\s*\(\s*t\s*\)|const\s+t\s*=)/);
+        expect(templates).not.toContain('<!--');
+        expect(styleIndex).not.toMatch(/\bconst\s+s\s*=/);
+        expect(panelStyleIndex).not.toMatch(/\bconst\s+s\s*=/);
+    });
+
     it('does not keep content toolbar pin/dock state facades after removing the pin UI entry point', async () => {
         const files = [
             'content/toolbar/controller.js',
@@ -265,8 +276,11 @@ describe('project code hygiene', () => {
     it('uses descriptive DOM variable names in UI and control code', async () => {
         const sourceFiles = [
             'background/control/actions/input/mouse.js',
+            'background/control/connection.js',
             'content/toolbar/view/widget.js',
             'content/toolbar/view/window.js',
+            'sandbox/boot/app.js',
+            'sandbox/core/i18n.js',
             'sandbox/controllers/app_controller.js',
             'sandbox/ui/chat.js',
             'sandbox/ui/settings/sections/general.js',
@@ -275,6 +289,9 @@ describe('project code hygiene', () => {
         for (const sourcePath of sourceFiles) {
             const source = await readProjectFile(sourcePath);
             expect(source, sourcePath).not.toMatch(/\b(?:const|let|var)\s+(?:btn|el)\b/);
+            expect(source, sourcePath).not.toMatch(
+                /(?:\((?:el|fn|cb)\)\s*=>|\.forEach\(\((?:el|fn|cb)\)\s*=>)/
+            );
         }
 
         const chat = await readProjectFile('sandbox/ui/chat.js');
@@ -386,6 +403,556 @@ describe('project code hygiene', () => {
             const source = await readProjectFile(sourcePath);
             for (const snippet of staleSnippets) {
                 expect(source, `${sourcePath}: ${snippet}`).not.toContain(snippet);
+            }
+        }
+    });
+
+    it('keeps YAML formatting readable under the project Prettier config', async () => {
+        const prettierConfig = await readJson('.prettierrc');
+
+        expect(prettierConfig.overrides).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    files: ['*.yml', '*.yaml'],
+                    options: expect.objectContaining({ tabWidth: 2 }),
+                }),
+            ])
+        );
+    });
+
+    it('keeps settings help button markup centralized', async () => {
+        const templatePaths = [
+            'sandbox/ui/templates/settings/connection.js',
+            'sandbox/ui/templates/settings/general.js',
+            'sandbox/ui/templates/settings/shortcuts.js',
+        ];
+        const helpButton = await readProjectFile('sandbox/ui/templates/settings/help_button.js');
+
+        for (const sourcePath of templatePaths) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).toContain("from './help_button.js'");
+            expect(source, sourcePath).not.toMatch(/\bconst HelpButtons\b/);
+            expect(source, sourcePath).not.toMatch(/\bconst HelpButton\b/);
+            expect(source, sourcePath).not.toContain('aria-label="Help"');
+        }
+
+        expect(helpButton).toContain('createSettingsHelpButton');
+        expect(helpButton).not.toContain('aria-label="Help"');
+        expect(helpButton).toContain('data-i18n-title');
+    });
+
+    it('keeps tab selector lock icons in the shared template icon registry', async () => {
+        const tabSelector = await readProjectFile('sandbox/ui/tab_selector.js');
+        const icons = await readProjectFile('sandbox/ui/templates/icons.js');
+
+        expect(tabSelector).toContain('TemplateIcons.LOCK_CLOSED');
+        expect(tabSelector).toContain('TemplateIcons.LOCK_OPEN');
+        expect(tabSelector).not.toContain('const CLOSED_LOCK');
+        expect(tabSelector).not.toContain('const OPEN_LOCK');
+        expect(icons).toContain('LOCK_CLOSED');
+        expect(icons).toContain('LOCK_OPEN');
+    });
+
+    it('keeps sandbox UI SVG icons in the shared template icon registry', async () => {
+        const sourceFiles = [
+            'sandbox/render/config.js',
+            'sandbox/render/context_compression.js',
+            'sandbox/render/copy_button.js',
+            'sandbox/render/message_edit.js',
+            'sandbox/ui/chat.js',
+        ];
+        const icons = await readProjectFile('sandbox/ui/templates/icons.js');
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).toContain('TemplateIcons');
+            expect(source, sourcePath).not.toContain('<svg');
+            expect(source, sourcePath).not.toMatch(/\b(?:copyIcon|EDIT_ICON|SAVE_ICON)\b/);
+        }
+
+        for (const iconName of ['CHECK', 'COPY', 'EDIT', 'SEND', 'STOP', 'SUMMARY']) {
+            expect(icons).toContain(`${iconName}:`);
+        }
+    });
+
+    it('uses descriptive event parameter names in content pointer handlers', async () => {
+        const sourceFiles = ['content/selection.js', 'content/overlay.js'];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(
+                /\b(?:onMouseDown|onMouseMove|onMouseUp|onKeyDown|onClick|scheduleSelectionCheck|getEventPoint)\s*\(\s*e\s*\)/
+            );
+        }
+    });
+
+    it('uses descriptive cache and response names in sidepanel state and auth helpers', async () => {
+        const sidepanelState = await readProjectFile('sidepanel/core/state.js');
+        const sidepanelStateMessages = await readProjectFile('sidepanel/core/state_messages.js');
+        const auth = await readProjectFile('services/auth.js');
+
+        expect(sidepanelState).toContain('localStorageData');
+        expect(sidepanelState).toContain('sessionStorageData');
+        expect(sidepanelState).not.toContain('this.data');
+        expect(sidepanelState).not.toContain('this.sessionData');
+        expect(sidepanelStateMessages).toContain('localStorageData');
+        expect(sidepanelStateMessages).not.toMatch(/\bfunction\s+\w+\s*\(\s*data\b/);
+        expect(auth).not.toMatch(/\bconst\s+resp\b/);
+    });
+
+    it('uses descriptive stream payload and settings error names', async () => {
+        const sourceFiles = [
+            'background/control/connection.js',
+            'background/handlers/ui_tab_actions.js',
+            'background/managers/mcp/connection_client.js',
+            'background/managers/mcp/streamable_http.js',
+            'background/managers/mcp/sse_stream.js',
+            'sandbox/controllers/app_controller.js',
+            'sandbox/controllers/session_flow.js',
+            'sandbox/core/session_manager.js',
+            'sandbox/ui/settings/github_metadata.js',
+            'sandbox/ui/settings/index.js',
+            'sandbox/ui/settings/view.js',
+            'services/providers/sse.js',
+            'services/providers/web.js',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(
+                /\b(?:const|let)\s+(?:data|msg|err)\b|\(\s*(?:msg|err)\s*(?:[,)]|=>)/
+            );
+        }
+    });
+
+    it('uses descriptive callback names in session and settings collection code', async () => {
+        const sessionCollectionFiles = [
+            'background/managers/history_manager.js',
+            'background/managers/session/history_store.js',
+            'sandbox/core/session_manager.js',
+        ];
+
+        for (const sourcePath of sessionCollectionFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(/\.(?:find|findIndex|filter)\(\(s\)\s*=>/);
+        }
+
+        const sessionManager = await readProjectFile('sandbox/core/session_manager.js');
+        expect(sessionManager).not.toMatch(/\.sort\(\(a,\s*b\)\s*=>/);
+
+        const settingsView = await readProjectFile('sandbox/ui/settings/view.js');
+        expect(settingsView).not.toMatch(/\.forEach\(\((?:t|s)\)\s*=>/);
+
+        const sidebar = await readProjectFile('sandbox/ui/sidebar.js');
+        expect(sidebar).not.toMatch(/\.map\(\(r\)\s*=>/);
+    });
+
+    it('uses descriptive callback names in MCP server collection code', async () => {
+        const sourceFiles = [
+            'background/handlers/session/prompt/builder.js',
+            'background/handlers/session/prompt/tool_executor.js',
+            'background/managers/mcp_remote_manager.js',
+            'sandbox/controllers/prompt.js',
+            'sandbox/ui/settings/sections/connection.js',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(
+                /\.(?:some|find|filter|map)\(\((?:s|t|m)\)\s*=>/
+            );
+        }
+    });
+
+    it('uses descriptive callback names in account and model list parsing', async () => {
+        const sourceFiles = [
+            'background/managers/auth_manager.js',
+            'background/managers/session/settings_store.js',
+            'services/providers/official.js',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(/\.(?:map|filter)\(\((?:s|m|k)\)\s*=>/);
+        }
+    });
+
+    it('uses descriptive provider history and RPC message names', async () => {
+        const sourceFiles = [
+            'background/managers/mcp/rpc_messages.js',
+            'services/providers/official.js',
+            'services/providers/openai_compatible.js',
+            'services/providers/openai_payloads.js',
+            'services/providers/web.js',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toContain('JSON.stringify(data)');
+            expect(source, sourcePath).not.toMatch(/\bmsg\b/);
+            expect(source, sourcePath).not.toMatch(/\(\s*data\s*\)\s*=>/);
+            expect(source, sourcePath).not.toMatch(/\(\s*img\s*\)\s*=>/);
+        }
+    });
+
+    it('uses descriptive settings payload names across settings helpers', async () => {
+        const sourceFiles = [
+            'settings/bridge.js',
+            'shared/messaging/index.js',
+            'shared/settings/connection.js',
+            'shared/settings/openai.js',
+            'sandbox/ui/settings/index.js',
+            'sandbox/ui/settings/index.test.js',
+            'sandbox/ui/settings/settings_save.js',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(
+                /\b(?:function|export function|async function)\s+\w+\s*\(\s*data\b/
+            );
+            expect(source, sourcePath).not.toMatch(/\(\s*data\s*\)\s*=>/);
+            expect(source, sourcePath).not.toMatch(/\b(?:const|let|var)\s+data\b/);
+        }
+
+        const settingsBridge = await readProjectFile('settings/bridge.js');
+        expect(settingsBridge).not.toContain('const result = await getLocalStorageData');
+    });
+
+    it('uses descriptive payload and image names in toolbar dispatch actions', async () => {
+        const dispatcher = await readProjectFile('content/toolbar/dispatch.js');
+
+        expect(dispatcher).not.toMatch(/\bdispatch\s*\(\s*actionType,\s*data\b/);
+        expect(dispatcher).not.toMatch(/\bconst\s+(?:img|imgUrl|rect)\b/);
+        expect(dispatcher).not.toMatch(/\bcatch\s*\(\s*err\s*\)/);
+    });
+
+    it('uses descriptive image element names in generated image UI code', async () => {
+        const sourceFiles = [
+            'content/toolbar/image.js',
+            'content/toolbar/ui/renderer.js',
+            'sandbox/controllers/message_results.js',
+            'sandbox/render/generated_image.js',
+        ];
+        const redundantComments = [
+            'Bind method for event listeners',
+            'Default to enabled, but actual state set via setEnabled',
+            'Hide immediately',
+            'Loading Placeholder',
+            'Request Background Fetch',
+            'Click to view full size',
+            'Execute fetch tasks',
+            'Send message to background to fetch actual image',
+            'Export to Window',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(/\bconst\s+(?:img|reqId)\b/);
+            expect(source, sourcePath).not.toMatch(/\bonImageHover\s*\(\s*e\s*\)/);
+            expect(source, sourcePath).not.toMatch(/\binit\s*\(\s*\)\s*\{\s*\}/);
+
+            for (const comment of redundantComments) {
+                expect(source, `${sourcePath}: ${comment}`).not.toContain(comment);
+            }
+        }
+
+        const toolbarController = await readProjectFile('content/toolbar/controller.js');
+        expect(toolbarController).not.toContain('this.imageDetector.init()');
+    });
+
+    it('uses descriptive image element names in UI image builders', async () => {
+        const sourceFiles = [
+            'sandbox/core/image_manager.js',
+            'sandbox/render/message_media.js',
+            'sandbox/ui/tab_selector.js',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(/\bconst\s+img\b/);
+            expect(source, sourcePath).not.toMatch(/\(\s*img\s*\)\s*=>/);
+        }
+    });
+
+    it('uses descriptive canvas and render pipeline names in image helpers', async () => {
+        const imageHelpers = ['shared/dom/crop_global.js', 'shared/media/watermark_remover.js'];
+
+        for (const sourcePath of imageHelpers) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(/\b(?:const|let|var)\s+(?:ctx|img)\b/);
+            expect(source, sourcePath).not.toMatch(/\bfunction\s+\w+\s*\(\s*ctx\b/);
+        }
+
+        const toolbarRenderer = await readProjectFile('content/toolbar/ui/renderer.js');
+        expect(toolbarRenderer).not.toMatch(/\blet\s+(?:html|tasks)\b/);
+        expect(toolbarRenderer).not.toContain('const result = await this.bridge.render');
+        expect(toolbarRenderer).not.toContain('Pass to view');
+    });
+
+    it('uses a descriptive root element name in message rendering', async () => {
+        const messageRenderer = await readProjectFile('sandbox/render/message.js');
+
+        expect(messageRenderer).toContain('messageElement');
+        expect(messageRenderer).not.toContain('const div = document.createElement');
+        expect(messageRenderer).not.toContain('messageEl: div');
+    });
+
+    it('uses descriptive DOM root names in small UI builders', async () => {
+        const contextCompression = await readProjectFile('sandbox/render/context_compression.js');
+        const mcpToolsView = await readProjectFile(
+            'sandbox/ui/settings/sections/mcp_tools_view.js'
+        );
+
+        expect(contextCompression).toContain('noticeElement');
+        expect(contextCompression).not.toContain('const div = document.createElement');
+        expect(mcpToolsView).toContain('helpTextElement');
+        expect(mcpToolsView).not.toContain('const div = document.createElement');
+    });
+
+    it('uses descriptive sort callback names in settings and source helpers', async () => {
+        const sourceFiles = [
+            'shared/mcp/transport.js',
+            'sandbox/render/sources.js',
+            'sandbox/ui/settings/sections/connection.js',
+            'sandbox/ui/settings/sections/mcp_tools_view.js',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).not.toMatch(/\.sort\(\(a,\s*b\)\s*=>/);
+        }
+    });
+
+    it('keeps toolbar view DOM lookup and section labels descriptive', async () => {
+        const toolbarView = await readProjectFile('content/toolbar/view/index.js');
+        const lowInformationLabels = [
+            'New Window Elements',
+            'Footer Elements',
+            'Buttons',
+            'Image Menu Buttons',
+            'Image Edit Buttons',
+            'Delegation to Widget View',
+            'Delegation to Window View',
+            'Model Selection',
+            'General',
+        ];
+
+        expect(toolbarView).not.toContain('const get = (id)');
+        expect(toolbarView).toContain('getToolbarElement');
+        for (const label of lowInformationLabels) {
+            expect(toolbarView, label).not.toContain(label);
+        }
+    });
+
+    it('uses descriptive restored model state names in boot messaging', async () => {
+        const messaging = await readProjectFile('sandbox/boot/messaging.js');
+
+        expect(messaging).toContain('previousModelValue');
+        expect(messaging).not.toContain('const prev =');
+    });
+
+    it('keeps low-information narration comments out of UI flow code', async () => {
+        const sourceFiles = [
+            'background/index.js',
+            'background/managers/image_manager.js',
+            'background/managers/auth_manager.js',
+            'background/managers/history_manager.js',
+            'background/managers/keep_alive.js',
+            'background/managers/session/settings_store.js',
+            'background/managers/session/request_dispatcher.js',
+            'background/handlers/session/prompt/tool_executor.js',
+            'content/index.js',
+            'content/messages.js',
+            'content/toolbar/i18n.js',
+            'content/toolbar/stream.js',
+            'content/toolbar/view/index.js',
+            'content/toolbar/view/window.js',
+            'background/menus.js',
+            'sandbox/boot/renderer.js',
+            'sandbox/boot/messaging.js',
+            'sandbox/controllers/app_controller.js',
+            'sandbox/controllers/message_handler.js',
+            'sandbox/controllers/prompt.js',
+            'sandbox/controllers/session_flow.js',
+            'sandbox/core/session_manager.js',
+            'sandbox/render/message.js',
+            'sandbox/render/content.js',
+            'sandbox/ui/chat.js',
+            'sandbox/ui/sidebar.js',
+            'sandbox/ui/settings/view.js',
+            'sandbox/ui/ui_controller.js',
+            'services/parser.js',
+            'services/providers/web.js',
+            'services/providers/official.js',
+        ];
+        const redundantComments = [
+            'Setup Console Interception',
+            'Setup Sidepanel',
+            'Initialize Advanced Keep-Alive',
+            'Initialize LogManager',
+            'Initialize Managers',
+            'Initialize Modules',
+            'Add Current Prompt',
+            'Add System Instruction if present',
+            'Fetch History',
+            'Show/Hide the tab switcher in header',
+            'Update UI settings panel',
+            'Restore Sessions',
+            'Tab list response',
+            'Tab Locked Notification',
+            'Page Context Check Result',
+            'Pass other messages to message bridge handler',
+            'Tab switching logic for the split settings layout',
+            'Update tab title and i18n',
+            'Reset to the connection tab on open',
+            'Delegation to Shortcuts',
+            'Delegation to Appearance',
+            'Delegation to General',
+            'Delegation to Connection',
+            'Delegation to About',
+            'Delegation to Sub-Controllers',
+            'Event Handling',
+            'If forceState is provided, match it. Otherwise toggle.',
+            'Disable page context if browser control is on',
+            'For now, keeping them independent.',
+            'Add to top',
+            'Update context',
+            'Lazy Init Fuse',
+            'Cache data for searching',
+            'Reset Fuse index as data changed',
+            'Check if there is an active search query',
+            'Reset height only once',
+            'Bind Escape key event listener safely',
+            'Safely unbind Escape key event listener',
+            'If deleted current session, return true to signal a switch is needed',
+            'Clean text (remove newlines) for display',
+            'Handle attachments based on role',
+            'AI generated images',
+            'Store image array if present',
+            'Add unique images.',
+            'Ensure alarm is set up',
+            'Add listener (ensure single binding)',
+            'Perform initial check immediately on load',
+            'Export singleton instance',
+            'Load indices',
+            'Load last pointer',
+            'Handle API Key Rotation',
+            'Reset pointer if out of bounds',
+            'Advance pointer for next call',
+            'Trim single key just in case',
+            'Context management',
+            'Store current text state',
+            'Dynamic Model Selection',
+            'Explicit Mapping logic',
+            'Handle locally',
+            'Fetch image from a URL or Data URI',
+            'Convert blob to base64',
+            'Internal helper for capturing visible tab',
+            'Capture the visible tab and return base64',
+            'Used when content script selects an area',
+            'Return data to UI for cropping',
+            'Handle Context Menu Clicks',
+            'Process line-by-line',
+            'Process remaining buffer',
+            'Render Markdown and Math for AI responses',
+            'Use shared pipeline',
+            'Process KaTeX if available',
+            'Loading Messages',
+            '// Settings',
+            'Dependencies (Loaded via manifest order)',
+            'Initialize Helpers',
+            'Initialize Router',
+            'Link Shortcuts',
+            'Initialize Message Handler',
+            'Initialize Sub-Controllers',
+            'Initialize Sub-Views',
+            'Settings and Viewer now self-manage their DOM',
+            'Properties exposed for external use',
+            'Initialize Layout Detection',
+            'Dynamic Model List',
+            'Update result in real-time',
+            'Finished, pass isStreaming = false',
+            'Pass result.images array',
+            'If result is null',
+            'Export to Window',
+            'Bind immediately',
+            'Check if MCP is enabled',
+            'Check if this is a multi-server tool ID',
+            'Multi-server mode: route by tool ID',
+            'Default to first option',
+            'Dispatch change to update app state',
+            '--- Delegation Methods ---',
+            'Queue messages until app is ready',
+            'Safety check: if invalid model, fallback',
+            'Force index 0 if still invalid',
+            'Forward general messages to App Controller',
+            'Pass msg.thoughts to appendMessage',
+            'Update Title if needed',
+            'Render User Message',
+            "If we don't have a bubble yet, create one",
+            'Update content if text or thoughts exist',
+            'Ensure UI state reflects generation',
+            'Reset Content',
+            'Hide Footer initially',
+            'Show Footer with Stop button',
+            'Only auto-scroll to bottom during streaming',
+            'Content is now always HTML rendered via Bridge',
+            'Ensure Footer is visible',
+            'Empty and not streaming',
+            'Finished: Scroll to top',
+            'Reset Copy Icon',
+            'Show Footer with Actions',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            for (const comment of redundantComments) {
+                expect(source, `${sourcePath}: ${comment}`).not.toContain(comment);
+            }
+        }
+    });
+
+    it('keeps settings element lookup helper centralized', async () => {
+        const sourceFiles = [
+            'sandbox/ui/settings/view.js',
+            'sandbox/ui/settings/sections/about.js',
+            'sandbox/ui/settings/sections/appearance.js',
+            'sandbox/ui/settings/sections/connection.js',
+            'sandbox/ui/settings/sections/general.js',
+            'sandbox/ui/settings/sections/shortcuts.js',
+        ];
+        const helper = await readProjectFile('sandbox/ui/settings/dom.js');
+
+        expect(helper).toContain('getSettingsElement');
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            expect(source, sourcePath).toContain('getSettingsElement');
+            expect(source, sourcePath).not.toContain(
+                'const get = (id) => document.getElementById(id);'
+            );
+        }
+    });
+
+    it('keeps transitional settings schema comments out of stable UI code', async () => {
+        const sourceFiles = [
+            'sandbox/ui/settings/index.js',
+            'sandbox/ui/settings/sections/connection.js',
+        ];
+        const transitionalComments = [
+            'Legacy support',
+            'Servers list (preferred)',
+            'Legacy single server fields',
+            'backward compatibility but',
+            'Legacy fields for single-server backward compatibility',
+            'Legacy compat:',
+        ];
+
+        for (const sourcePath of sourceFiles) {
+            const source = await readProjectFile(sourcePath);
+            for (const comment of transitionalComments) {
+                expect(source, `${sourcePath}: ${comment}`).not.toContain(comment);
             }
         }
     });

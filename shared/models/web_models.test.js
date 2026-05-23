@@ -20,9 +20,7 @@ describe('web model metadata', () => {
     it('renders option markup from the same shared model list', () => {
         const markup = createWebModelOptionMarkup();
 
-        expect(markup).toContain(
-            '<option value="8c46e95b1a07cecc">3.1 Flash-Lite</option>'
-        );
+        expect(markup).toContain('<option value="8c46e95b1a07cecc">3.1 Flash-Lite</option>');
         expect(markup).toContain('<option value="56fdd199312815e2">3.5 Flash</option>');
         expect(markup).toContain('<option value="e6fa609c3fa255c0">3.1 Pro</option>');
         expect(markup).not.toContain('gemini-3.1-flash-image-preview');

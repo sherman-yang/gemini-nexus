@@ -84,7 +84,6 @@ class SelectionOverlay {
         this.startX = 0;
         this.startY = 0;
 
-        // Bind methods
         this.onMouseDown = this.onMouseDown.bind(this);
         this.onMouseMove = this.onMouseMove.bind(this);
         this.onMouseUp = this.onMouseUp.bind(this);
@@ -93,7 +92,6 @@ class SelectionOverlay {
     }
 
     start(screenshotBase64 = null) {
-        // Cleanup existing
         this.cleanup();
         this.createDOM(screenshotBase64);
         this.attachListeners();
@@ -106,7 +104,6 @@ class SelectionOverlay {
         this.overlay.id = 'gemini-nexus-overlay';
         this.overlay.className = 'gemini-nexus-capture-overlay';
 
-        // Add the screenshot as a frozen background
         if (screenshotBase64) {
             this.backgroundImg = document.createElement('img');
             this.backgroundImg.src = screenshotBase64;
@@ -117,7 +114,6 @@ class SelectionOverlay {
         this.selectionBox = document.createElement('div');
         this.selectionBox.className = 'gemini-nexus-capture-selection';
 
-        // If we have a background image, we can use it to create a high-contrast cut-out
         if (screenshotBase64) {
             const innerImg = document.createElement('div');
             innerImg.className = 'gemini-nexus-capture-selection-image';
@@ -125,7 +121,6 @@ class SelectionOverlay {
             this.selectionBox.appendChild(innerImg);
             this.selectionBox.classList.add('has-background');
 
-            // Dynamic position for innerImg to match viewport coordinates
             this.innerImgRef = innerImg;
         }
 
@@ -171,14 +166,14 @@ class SelectionOverlay {
         this.innerImgRef = null;
     }
 
-    onMouseDown(e) {
-        if (e.button !== 0) return;
-        e.preventDefault();
-        e.stopPropagation();
+    onMouseDown(pointerEvent) {
+        if (pointerEvent.button !== 0) return;
+        pointerEvent.preventDefault();
+        pointerEvent.stopPropagation();
 
         this.isDragging = true;
-        this.startX = e.clientX;
-        this.startY = e.clientY;
+        this.startX = pointerEvent.clientX;
+        this.startY = pointerEvent.clientY;
 
         this.selectionBox.style.display = 'block';
         this.selectionBox.style.left = this.startX + 'px';
@@ -194,13 +189,13 @@ class SelectionOverlay {
         this.hint.style.display = 'none';
     }
 
-    onMouseMove(e) {
+    onMouseMove(pointerEvent) {
         if (!this.isDragging) return;
-        e.preventDefault();
-        e.stopPropagation();
+        pointerEvent.preventDefault();
+        pointerEvent.stopPropagation();
 
-        const currentX = e.clientX;
-        const currentY = e.clientY;
+        const currentX = pointerEvent.clientX;
+        const currentY = pointerEvent.clientY;
 
         const width = Math.abs(currentX - this.startX);
         const height = Math.abs(currentY - this.startY);
@@ -218,10 +213,10 @@ class SelectionOverlay {
         }
     }
 
-    onMouseUp(e) {
+    onMouseUp(pointerEvent) {
         if (!this.isDragging) return;
-        e.preventDefault();
-        e.stopPropagation();
+        pointerEvent.preventDefault();
+        pointerEvent.stopPropagation();
         this.isDragging = false;
 
         const rect = this.selectionBox.getBoundingClientRect();
@@ -245,19 +240,18 @@ class SelectionOverlay {
         }, 50);
     }
 
-    onKeyDown(e) {
-        if (e.key === 'Escape') {
-            e.preventDefault();
-            e.stopPropagation();
+    onKeyDown(keyEvent) {
+        if (keyEvent.key === 'Escape') {
+            keyEvent.preventDefault();
+            keyEvent.stopPropagation();
             this.cleanup();
         }
     }
 
-    onClick(e) {
-        e.preventDefault();
-        e.stopPropagation();
+    onClick(clickEvent) {
+        clickEvent.preventDefault();
+        clickEvent.stopPropagation();
     }
 }
 
-// Attach to window so content.js can access it
 window.GeminiNexusOverlay = SelectionOverlay;

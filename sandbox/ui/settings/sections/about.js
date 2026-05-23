@@ -1,3 +1,5 @@
+import { getSettingsElement } from '../dom.js';
+
 export class AboutSection {
     constructor(callbacks) {
         this.callbacks = callbacks || {};
@@ -7,13 +9,12 @@ export class AboutSection {
     }
 
     queryElements() {
-        const get = (id) => document.getElementById(id);
         this.elements = {
-            btnDownloadLogs: get('download-logs'),
-            aboutGroup: get('about-settings-group'),
-            starEl: get('star-count'),
-            currentVersionEl: get('app-current-version'),
-            updateStatusEl: get('app-update-status'),
+            btnDownloadLogs: getSettingsElement('download-logs'),
+            aboutGroup: getSettingsElement('about-settings-group'),
+            starEl: getSettingsElement('star-count'),
+            currentVersionEl: getSettingsElement('app-current-version'),
+            updateStatusEl: getSettingsElement('app-update-status'),
         };
     }
 

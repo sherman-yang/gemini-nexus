@@ -48,7 +48,9 @@ export function handleSwitchTab(context, request, sender, sendResponse) {
             context.controlManager.setTargetTab(tabId);
         }
         if (tabId && request.switchVisual !== false) {
-            chrome.tabs.update(tabId, { active: true }).catch((err) => console.warn(err));
+            chrome.tabs
+                .update(tabId, { active: true })
+                .catch((tabUpdateError) => console.warn(tabUpdateError));
         }
         sendResponse({ status: 'switched' });
     })();

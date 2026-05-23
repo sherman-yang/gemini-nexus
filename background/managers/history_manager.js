@@ -95,13 +95,15 @@ export async function saveToHistory(text, result, filesObj = null) {
 export async function appendAiMessage(sessionId, result) {
     try {
         const { geminiSessions = [] } = await chrome.storage.local.get(['geminiSessions']);
-        const sessionIndex = geminiSessions.findIndex((s) => s.id === sessionId);
+        const sessionIndex = geminiSessions.findIndex(
+            (storedSession) => storedSession.id === sessionId
+        );
 
         if (sessionIndex !== -1) {
             const session = geminiSessions[sessionIndex];
 
             session.messages.push(createAiHistoryMessage(result));
-            session.context = result.context; // Update context
+            session.context = result.context;
             session.timestamp = Date.now();
 
             await moveSessionToTopAndSave(geminiSessions, sessionIndex, session);
@@ -120,7 +122,9 @@ export async function appendTurnToHistory(sessionId, text, result, filesObj = nu
         if (!sessionId || !result || result.status !== 'success') return null;
 
         const { geminiSessions = [] } = await chrome.storage.local.get(['geminiSessions']);
-        const sessionIndex = geminiSessions.findIndex((s) => s.id === sessionId);
+        const sessionIndex = geminiSessions.findIndex(
+            (storedSession) => storedSession.id === sessionId
+        );
         if (sessionIndex === -1) return null;
 
         const session = geminiSessions[sessionIndex];
@@ -150,7 +154,9 @@ export async function appendRawMessages(sessionId, messages) {
         if (!sessionId || !Array.isArray(messages) || messages.length === 0) return false;
 
         const { geminiSessions = [] } = await chrome.storage.local.get(['geminiSessions']);
-        const sessionIndex = geminiSessions.findIndex((s) => s.id === sessionId);
+        const sessionIndex = geminiSessions.findIndex(
+            (storedSession) => storedSession.id === sessionId
+        );
 
         if (sessionIndex === -1) return false;
 
@@ -203,7 +209,9 @@ export async function appendAiMessageIfDisplayable(sessionId, result) {
 export async function appendUserMessage(sessionId, text, images = null, metadata = null) {
     try {
         const { geminiSessions = [] } = await chrome.storage.local.get(['geminiSessions']);
-        const sessionIndex = geminiSessions.findIndex((s) => s.id === sessionId);
+        const sessionIndex = geminiSessions.findIndex(
+            (storedSession) => storedSession.id === sessionId
+        );
 
         if (sessionIndex !== -1) {
             const session = geminiSessions[sessionIndex];
@@ -212,7 +220,7 @@ export async function appendUserMessage(sessionId, text, images = null, metadata
             const message = {
                 role: 'user',
                 text,
-                image: images, // Store image array if present
+                image: images,
             };
             if (attachments.length > 0) {
                 message.attachments = attachments;
@@ -252,7 +260,9 @@ export async function replaceSessionSnapshot(sessionSnapshot) {
         }
 
         const { geminiSessions = [] } = await chrome.storage.local.get(['geminiSessions']);
-        const sessionIndex = geminiSessions.findIndex((s) => s.id === sessionSnapshot.id);
+        const sessionIndex = geminiSessions.findIndex(
+            (storedSession) => storedSession.id === sessionSnapshot.id
+        );
         const nextSession = {
             ...sessionSnapshot,
             timestamp: sessionSnapshot.timestamp || Date.now(),
@@ -277,7 +287,7 @@ export async function getSessionContextSummary(sessionId) {
 
     try {
         const { geminiSessions = [] } = await chrome.storage.local.get(['geminiSessions']);
-        const session = geminiSessions.find((s) => s.id === sessionId);
+        const session = geminiSessions.find((storedSession) => storedSession.id === sessionId);
         return session?.contextSummary || null;
     } catch (error) {
         console.error('Error reading context summary:', error);
@@ -290,7 +300,9 @@ export async function updateSessionContextSummary(sessionId, contextSummary) {
 
     try {
         const { geminiSessions = [] } = await chrome.storage.local.get(['geminiSessions']);
-        const sessionIndex = geminiSessions.findIndex((s) => s.id === sessionId);
+        const sessionIndex = geminiSessions.findIndex(
+            (storedSession) => storedSession.id === sessionId
+        );
         if (sessionIndex === -1) return false;
 
         geminiSessions[sessionIndex].contextSummary = contextSummary;

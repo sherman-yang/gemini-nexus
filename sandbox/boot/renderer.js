@@ -27,7 +27,6 @@ export function initRendererMode() {
             try {
                 let html = transformMarkdown(text);
 
-                // Process KaTeX if available
                 if (typeof katex !== 'undefined') {
                     html = html.replace(/\$\$([\s\S]+?)\$\$/g, (match, content) => {
                         try {

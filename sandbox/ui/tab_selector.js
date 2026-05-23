@@ -159,7 +159,6 @@ export class TabSelectorController {
             const isControllable = tab.controllable !== false;
 
             const tabRow = document.createElement('div');
-            // 'active' in CSS usually denotes selection, here we use it for locked state visibility
             tabRow.className = `history-item browser-tab-item ${isLocked ? 'active' : ''} ${!isControllable ? 'disabled' : ''}`;
             tabRow.dataset.tabId = String(tab.id);
             tabRow.setAttribute('role', 'button');
@@ -194,14 +193,11 @@ export class TabSelectorController {
             lockButton.classList.toggle('is-locked', isLocked);
             lockButton.disabled = !isControllable;
 
-            const CLOSED_LOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
-            const OPEN_LOCK = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>`;
-
             if (isLocked) {
-                lockButton.innerHTML = CLOSED_LOCK;
+                lockButton.innerHTML = TemplateIcons.LOCK_CLOSED;
                 lockButton.title = t('currentTab');
             } else {
-                lockButton.innerHTML = OPEN_LOCK;
+                lockButton.innerHTML = TemplateIcons.LOCK_OPEN;
                 lockButton.title = t('controlTabInBackground');
             }
 
@@ -242,20 +238,18 @@ export class TabSelectorController {
     updateTrigger(tab) {
         if (!this.triggerBtn) return;
 
-        // Remove existing content
         this.triggerBtn.innerHTML = '';
 
         if (tab && tab.favIconUrl) {
-            const img = document.createElement('img');
-            img.src = tab.favIconUrl;
-            img.className = 'browser-trigger-favicon';
+            const faviconElement = document.createElement('img');
+            faviconElement.src = tab.favIconUrl;
+            faviconElement.className = 'browser-trigger-favicon';
 
-            // Fallback to default icon if image fails to load
-            img.onerror = () => {
+            faviconElement.onerror = () => {
                 this.resetTrigger();
             };
 
-            this.triggerBtn.appendChild(img);
+            this.triggerBtn.appendChild(faviconElement);
             this.triggerBtn.title = `Locked: ${tab.title}`;
             this.triggerBtn.classList.add('tab-switcher-locked');
         } else {

@@ -48,8 +48,8 @@ export class ImageManager {
                 const doc = new DOMParser().parseFromString(html, 'text/html');
                 const images = doc.querySelectorAll('img');
 
-                images.forEach((img) => {
-                    const src = img.src;
+                images.forEach((imageElement) => {
+                    const src = imageElement.src;
                     if (!src) return;
 
                     if (src.startsWith('data:')) {
@@ -123,12 +123,17 @@ export class ImageManager {
                 const doc = new DOMParser().parseFromString(html, 'text/html');
                 const images = doc.querySelectorAll('img');
 
-                images.forEach((img) => {
-                    const src = img.src;
+                images.forEach((imageElement) => {
+                    const src = imageElement.src;
                     if (!src) return;
 
                     // Filter out likely spacers or tracking pixels
-                    if (img.width > 0 && img.width < 50 && img.height > 0 && img.height < 50)
+                    if (
+                        imageElement.width > 0 &&
+                        imageElement.width < 50 &&
+                        imageElement.height > 0 &&
+                        imageElement.height < 50
+                    )
                         return;
 
                     if (src.startsWith('data:')) {
@@ -244,9 +249,9 @@ export class ImageManager {
             previewItem.appendChild(removeButton);
 
             if (file.type && file.type.startsWith('image/')) {
-                const img = document.createElement('img');
-                img.src = file.base64;
-                previewItem.appendChild(img);
+                const imageElement = document.createElement('img');
+                imageElement.src = file.base64;
+                previewItem.appendChild(imageElement);
             } else {
                 const card = document.createElement('div');
                 card.className = 'file-item-card';

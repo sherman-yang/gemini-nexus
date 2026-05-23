@@ -1,3 +1,7 @@
+<p align="center">
+  <a href="./README.md">English</a> | <a href="./README.zh-CN.md">中文</a>
+</p>
+
 <div align="center">
   <a href="https://github.com/yeahhe365/Gemini-Nexus">
     <img src="logo.png" width="160" height="160" alt="Gemini Nexus Logo">
@@ -85,7 +89,7 @@ Gemini Nexus 可以选择连接到一个或多个外部 MCP 服务器（通过 *
 #### 设置步骤
 
 1. 启动您的 MCP 代理并在其中配置好 MCP 服务器。
-2. 在 **设置 (Settings) → 连接 (Connection) → 外部 MCP 工具 (External MCP Tools)** 中：
+2. 在 **设置 (Settings) -> 连接 (Connection) -> 外部 MCP 工具 (External MCP Tools)** 中：
     - 启用“外部 MCP 工具” (Enable External MCP Tools)。
     - 新增或选择服务器条目；**活动服务器** (Active Server) 表示当前正在编辑的条目，对话时会使用所有已启用的服务器。
     - 选择传输协议并设置服务器 URL（SSE / 可流式传输的 HTTP / WebSocket）。

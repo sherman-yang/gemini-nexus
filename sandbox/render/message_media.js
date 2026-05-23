@@ -37,14 +37,15 @@ export function createUserImagesGrid(attachment) {
         }
 
         const src = file.base64;
-        const img = document.createElement('img');
-        img.src = src;
-        img.className = userAttachments.length > 1 ? 'chat-image chat-image-compact' : 'chat-image';
+        const imageElement = document.createElement('img');
+        imageElement.src = src;
+        imageElement.className =
+            userAttachments.length > 1 ? 'chat-image chat-image-compact' : 'chat-image';
 
-        img.addEventListener('click', () => {
+        imageElement.addEventListener('click', () => {
             document.dispatchEvent(new CustomEvent('gemini-view-image', { detail: src }));
         });
-        imagesContainer.appendChild(img);
+        imagesContainer.appendChild(imageElement);
     });
 
     return imagesContainer;

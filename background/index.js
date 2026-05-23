@@ -9,15 +9,12 @@ import { setupMessageListener } from './messages.js';
 import { keepAliveManager } from './managers/keep_alive.js';
 import { setupContentScriptInjection } from './content_injection.js';
 
-// Initialize LogManager
 const logManager = new LogManager();
 
-// Setup Console Interception (Captures logs for UI download)
 setupConsoleInterception(logManager);
 
 console.info('[Gemini Nexus] Background Service Worker Started');
 
-// Initialize Managers
 const sessionManager = new GeminiSessionManager();
 const imageManager = new ImageManager();
 const controlManager = new BrowserControlManager();
@@ -27,7 +24,6 @@ const mcpManager = new McpRemoteManager({
     clientVersion: chrome.runtime.getManifest().version,
 });
 
-// Setup Sidepanel
 chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
 sidePanelScopeManager.init();
 chrome.action.onClicked.addListener((tab) => {
@@ -37,7 +33,6 @@ chrome.action.onClicked.addListener((tab) => {
     });
 });
 
-// Initialize Modules
 setupContextMenus();
 setupContentScriptInjection();
 setupMessageListener(
@@ -49,5 +44,4 @@ setupMessageListener(
     sidePanelScopeManager
 );
 
-// Initialize Advanced Keep-Alive (Cookie Rotation)
 keepAliveManager.init();

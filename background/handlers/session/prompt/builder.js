@@ -99,11 +99,11 @@ export class PromptBuilder {
         if (!sessionId) return true; // No session ID implies new/ephemeral request
         try {
             const { geminiSessions = [] } = await chrome.storage.local.get(['geminiSessions']);
-            const session = geminiSessions.find((s) => s.id === sessionId);
+            const session = geminiSessions.find((storedSession) => storedSession.id === sessionId);
             if (!session) return true;
 
             // If there are no AI responses yet, this is the first turn being processed
-            const hasAiResponse = session.messages.some((m) => m.role === 'ai');
+            const hasAiResponse = session.messages.some((message) => message.role === 'ai');
             return !hasAiResponse;
         } catch {
             return true; // Default to true on error to be safe

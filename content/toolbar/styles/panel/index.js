@@ -1,8 +1,10 @@
 (function () {
     window.GeminiStyles = window.GeminiStyles || {};
-    const s = window.GeminiStyles;
+    const styles = window.GeminiStyles;
 
-    // Combine modular styles into the main Panel property
-    s.Panel =
-        (s.PanelLayout || '') + (s.PanelHeader || '') + (s.PanelBody || '') + (s.PanelFooter || '');
+    styles.Panel =
+        (styles.PanelLayout || '') +
+        (styles.PanelHeader || '') +
+        (styles.PanelBody || '') +
+        (styles.PanelFooter || '');
 })();

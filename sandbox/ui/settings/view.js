@@ -4,6 +4,7 @@ import { AppearanceSection } from './sections/appearance.js';
 import { ShortcutsSection } from './sections/shortcuts.js';
 import { AboutSection } from './sections/about.js';
 import { DOM_IDS } from './constants.js';
+import { getSettingsElement } from './dom.js';
 
 export class SettingsView {
     constructor(callbacks) {
@@ -36,13 +37,11 @@ export class SettingsView {
     }
 
     queryElements() {
-        const get = (id) => document.getElementById(id);
-
         this.elements = {
-            modal: get(DOM_IDS.MODAL),
-            btnClose: get(DOM_IDS.BTN_CLOSE),
-            btnSave: get(DOM_IDS.BTN_SAVE_SHORTCUTS),
-            btnReset: get(DOM_IDS.BTN_RESET_SHORTCUTS),
+            modal: getSettingsElement(DOM_IDS.MODAL),
+            btnClose: getSettingsElement(DOM_IDS.BTN_CLOSE),
+            btnSave: getSettingsElement(DOM_IDS.BTN_SAVE_SHORTCUTS),
+            btnReset: getSettingsElement(DOM_IDS.BTN_RESET_SHORTCUTS),
         };
     }
 
@@ -59,25 +58,27 @@ export class SettingsView {
         if (btnSave) btnSave.addEventListener('click', () => this.handleSave());
         if (btnReset) btnReset.addEventListener('click', () => this.handleReset());
 
-        // Tab switching logic for the split settings layout
         const tabs = document.querySelectorAll('.settings-tab');
         const sections = document.querySelectorAll('.settings-section');
-        const tabTitle = document.getElementById('settings-tab-title');
+        const tabTitle = getSettingsElement('settings-tab-title');
 
         tabs.forEach((tab) => {
-            tab.addEventListener('click', () => {
+            const activateTab = () => {
                 const targetTab = tab.getAttribute('data-tab');
 
-                tabs.forEach((t) => t.classList.remove('active'));
-                sections.forEach((s) => s.classList.remove('active'));
+                tabs.forEach((settingsTab) => {
+                    settingsTab.classList.remove('active');
+                    settingsTab.setAttribute('aria-selected', 'false');
+                });
+                sections.forEach((settingsSection) => settingsSection.classList.remove('active'));
 
                 tab.classList.add('active');
+                tab.setAttribute('aria-selected', 'true');
                 const activeSection = document.querySelector(
                     `.settings-section[data-section="${targetTab}"]`
                 );
                 if (activeSection) activeSection.classList.add('active');
 
-                // Update tab title and i18n
                 if (tabTitle) {
                     const labelSpan = tab.querySelector('.tab-label');
                     if (labelSpan) {
@@ -90,14 +91,21 @@ export class SettingsView {
                         }
                     }
                 }
+            };
+
+            tab.addEventListener('click', activateTab);
+            tab.addEventListener('keydown', (keyEvent) => {
+                if (keyEvent.key !== 'Enter' && keyEvent.key !== ' ') return;
+                keyEvent.preventDefault();
+                activateTab();
             });
         });
     }
 
     handleSave() {
-        const data = this.getFormData();
+        const settingsData = this.getFormData();
 
-        this.fire('onSave', data);
+        this.fire('onSave', settingsData);
         this.close();
     }
 
@@ -129,11 +137,9 @@ export class SettingsView {
         if (this.elements.modal) {
             this.elements.modal.classList.add('visible');
 
-            // Reset to the connection tab on open
             const firstTab = document.querySelector('.settings-tab[data-tab="connection"]');
             if (firstTab) firstTab.click();
 
-            // Bind Escape key event listener safely
             if (!this._escapeKeyHandler) {
                 this._escapeKeyHandler = (keyEvent) => {
                     if (
@@ -156,19 +162,16 @@ export class SettingsView {
             this.elements.modal.classList.remove('visible');
         }
 
-        // Safely unbind Escape key event listener
         if (this._escapeKeyHandler) {
             document.removeEventListener('keydown', this._escapeKeyHandler);
             this._escapeKeyHandler = null;
         }
     }
 
-    // Delegation to Shortcuts
     setShortcuts(shortcuts) {
         this.shortcuts.setData(shortcuts);
     }
 
-    // Delegation to Appearance
     setThemeValue(theme) {
         this.appearance.setTheme(theme);
     }
@@ -181,7 +184,6 @@ export class SettingsView {
         this.appearance.applyVisualTheme(theme);
     }
 
-    // Delegation to General
     setToggles(textSelection, imageTools) {
         this.general.setToggles(textSelection, imageTools);
     }
@@ -210,12 +212,10 @@ export class SettingsView {
         this.general.setContextSettings(settings);
     }
 
-    // Delegation to Connection
     setConnectionSettings(data) {
         this.connection.setData(data);
     }
 
-    // Delegation to About
     displayStars(count) {
         this.about.displayStars(count);
     }

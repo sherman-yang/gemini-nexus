@@ -12,23 +12,23 @@ export const SettingsContentTemplate = `
                 <h3 data-i18n="settingsTitle">Settings</h3>
             </div>
             <ul class="settings-tabs">
-                <li class="settings-tab active" data-tab="connection">
-                    <span class="tab-icon">${TemplateIcons.PLUG}</span>
-                    <span class="tab-label" data-i18n="connection">Connection</span>
+                <li class="settings-tab active" data-tab="connection" role="button" tabindex="0" aria-selected="true">
+                    <span class="tab-icon">${TemplateIcons.KEY}</span>
+                    <span class="tab-label" data-i18n="apiSettings">API</span>
                 </li>
-                <li class="settings-tab" data-tab="general">
+                <li class="settings-tab" data-tab="general" role="button" tabindex="0" aria-selected="false">
                     <span class="tab-icon">${TemplateIcons.SETTINGS}</span>
                     <span class="tab-label" data-i18n="general">General</span>
                 </li>
-                <li class="settings-tab" data-tab="appearance">
+                <li class="settings-tab" data-tab="appearance" role="button" tabindex="0" aria-selected="false">
                     <span class="tab-icon">${TemplateIcons.PALETTE}</span>
                     <span class="tab-label" data-i18n="appearance">Appearance</span>
                 </li>
-                <li class="settings-tab" data-tab="shortcuts">
+                <li class="settings-tab" data-tab="shortcuts" role="button" tabindex="0" aria-selected="false">
                     <span class="tab-icon">${TemplateIcons.KEYBOARD}</span>
                     <span class="tab-label" data-i18n="keyboardShortcuts">Shortcuts</span>
                 </li>
-                <li class="settings-tab" data-tab="about">
+                <li class="settings-tab" data-tab="about" role="button" tabindex="0" aria-selected="false">
                     <span class="tab-icon">${TemplateIcons.INFO}</span>
                     <span class="tab-label" data-i18n="about">About</span>
                 </li>
@@ -36,7 +36,7 @@ export const SettingsContentTemplate = `
         </div>
         <div class="settings-main">
             <div class="settings-header">
-                <h3 id="settings-tab-title" data-i18n="connection">Connection</h3>
+                <h3 id="settings-tab-title" data-i18n="apiSettings">API</h3>
                 <div class="settings-header-actions">
                     <button id="reset-shortcuts" class="btn-secondary" data-i18n="resetDefault">Reset Default</button>
                     <button id="save-shortcuts" class="btn-primary" data-i18n="saveChanges">Save Changes</button>

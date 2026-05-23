@@ -23,7 +23,11 @@ export class PromptController {
         let mcpServers = [];
         if (conn && Array.isArray(conn.mcpServers) && conn.mcpServers.length > 0) {
             mcpServers = conn.mcpServers.filter(
-                (s) => s && s.enabled !== false && s.url && s.url.trim()
+                (serverConfig) =>
+                    serverConfig &&
+                    serverConfig.enabled !== false &&
+                    serverConfig.url &&
+                    serverConfig.url.trim()
             );
         } else if (conn && (conn.mcpServerUrl || conn.mcpTransport)) {
             // Legacy single-server fallback
@@ -131,13 +135,11 @@ export class PromptController {
         const session = this.sessionManager.getCurrentSession();
         if (!session) return;
 
-        // Update Title if needed
         if (session.messages.length === 0) {
             const titleUpdate = this.sessionManager.updateTitle(currentId, text || t('imageSent'));
             if (titleUpdate) this.app.sessionFlow.refreshHistoryUI();
         }
 
-        // Render User Message
         const displayAttachments = files.length > 0 ? files : null;
 
         const messageIndex = session.messages.length;

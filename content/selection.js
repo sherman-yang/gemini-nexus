@@ -21,16 +21,16 @@
             document.addEventListener('selectionchange', this.onSelectionChange);
         }
 
-        onMouseDown(e) {
+        onMouseDown(pointerEvent) {
             this.isPointerDown = true;
             if (this.callbacks.onClick) {
-                this.callbacks.onClick(e);
+                this.callbacks.onClick(pointerEvent);
             }
         }
 
-        onSelectionEnd(e) {
+        onSelectionEnd(pointerEvent) {
             this.isPointerDown = false;
-            this.scheduleSelectionCheck(e);
+            this.scheduleSelectionCheck(pointerEvent);
         }
 
         onSelectionChange() {
@@ -38,8 +38,8 @@
             this.scheduleSelectionCheck(null);
         }
 
-        scheduleSelectionCheck(e) {
-            const mousePoint = this.getEventPoint(e);
+        scheduleSelectionCheck(pointerEvent) {
+            const mousePoint = this.getEventPoint(pointerEvent);
             if (mousePoint || !this.pendingMousePoint) {
                 this.pendingMousePoint = mousePoint;
             }
@@ -127,15 +127,15 @@
             return tagName === 'TEXTAREA' || tagName === 'INPUT';
         }
 
-        getEventPoint(e) {
-            if (!e) return null;
+        getEventPoint(pointerEvent) {
+            if (!pointerEvent) return null;
 
             const source =
-                e.changedTouches && e.changedTouches.length > 0
-                    ? e.changedTouches[0]
-                    : e.touches && e.touches.length > 0
-                      ? e.touches[0]
-                      : e;
+                pointerEvent.changedTouches && pointerEvent.changedTouches.length > 0
+                    ? pointerEvent.changedTouches[0]
+                    : pointerEvent.touches && pointerEvent.touches.length > 0
+                      ? pointerEvent.touches[0]
+                      : pointerEvent;
 
             if (typeof source.clientX !== 'number' || typeof source.clientY !== 'number') {
                 return null;
@@ -172,6 +172,5 @@
         }
     }
 
-    // Export to Window
     window.GeminiSelectionObserver = SelectionObserver;
 })();

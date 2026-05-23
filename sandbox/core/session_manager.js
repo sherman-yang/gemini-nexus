@@ -19,7 +19,7 @@ export class SessionManager {
             messages: [],
             context: null, // Gemini context IDs
         };
-        this.sessions.unshift(newSession); // Add to top
+        this.sessions.unshift(newSession);
         this.currentSessionId = newId;
         return newSession;
     }
@@ -36,7 +36,9 @@ export class SessionManager {
     }
 
     getSortedSessions() {
-        return this.getPersistableSessions().sort((a, b) => b.timestamp - a.timestamp);
+        return this.getPersistableSessions().sort(
+            (leftSession, rightSession) => rightSession.timestamp - leftSession.timestamp
+        );
     }
 
     setCurrentId(id) {
@@ -49,7 +51,7 @@ export class SessionManager {
 
     getSessionById(id) {
         if (!id) return null;
-        return this.sessions.find((s) => s.id === id) || null;
+        return this.sessions.find((session) => session.id === id) || null;
     }
 
     getPersistableSessions() {
@@ -68,8 +70,7 @@ export class SessionManager {
     }
 
     deleteSession(id) {
-        this.sessions = this.sessions.filter((s) => s.id !== id);
-        // If deleted current session, return true to signal a switch is needed
+        this.sessions = this.sessions.filter((session) => session.id !== id);
         const wasCurrent = this.currentSessionId === id;
         if (wasCurrent) {
             this.currentSessionId = this.sessions.length > 0 ? this.sessions[0].id : null;
@@ -78,9 +79,8 @@ export class SessionManager {
     }
 
     updateTitle(id, text) {
-        const session = this.sessions.find((s) => s.id === id);
+        const session = this.sessions.find((storedSession) => storedSession.id === id);
         if (session) {
-            // Clean text (remove newlines) for display
             const cleanText = (text || '').replace(/[\r\n]+/g, ' ').trim();
             if (cleanText) {
                 session.title = cleanText.substring(0, 30) + (cleanText.length > 30 ? '...' : '');
@@ -91,30 +91,28 @@ export class SessionManager {
     }
 
     addMessage(id, role, text, attachment = null, thoughts = null) {
-        const session = this.sessions.find((s) => s.id === id);
+        const session = this.sessions.find((storedSession) => storedSession.id === id);
         if (session) {
-            const msg = { role, text };
+            const sessionMessage = { role, text };
 
             if (thoughts) {
-                msg.thoughts = thoughts;
+                sessionMessage.thoughts = thoughts;
             }
 
-            // Handle attachments based on role
             if (role === 'user') {
                 const attachments = normalizeUserAttachments(attachment);
                 if (attachments.length > 0) {
-                    msg.attachments = attachments;
+                    sessionMessage.attachments = attachments;
                     const images = getImageAttachmentDataUrls(attachments);
                     if (images.length > 0) {
-                        msg.image = images;
+                        sessionMessage.image = images;
                     }
                 }
             } else if (role === 'ai' && Array.isArray(attachment) && attachment.length > 0) {
-                // AI generated images
-                msg.generatedImages = attachment;
+                sessionMessage.generatedImages = attachment;
             }
 
-            session.messages.push(msg);
+            session.messages.push(sessionMessage);
             session.timestamp = Date.now();
             return true;
         }
@@ -122,7 +120,7 @@ export class SessionManager {
     }
 
     editUserMessageAndTruncate(id, messageIndex, text) {
-        const session = this.sessions.find((s) => s.id === id);
+        const session = this.sessions.find((storedSession) => storedSession.id === id);
         if (!session || !Array.isArray(session.messages)) return null;
 
         const target = session.messages[messageIndex];
@@ -151,7 +149,7 @@ export class SessionManager {
     }
 
     updateContext(id, context) {
-        const session = this.sessions.find((s) => s.id === id);
+        const session = this.sessions.find((storedSession) => storedSession.id === id);
         if (session) {
             session.context = context;
         }

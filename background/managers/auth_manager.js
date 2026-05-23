@@ -42,14 +42,12 @@ export class AuthManager {
                 this.currentContext = stored.geminiContext;
             }
 
-            // Load indices
             if (stored.geminiAccountIndices) {
                 this.accountIndices = stored.geminiAccountIndices
                     .split(',')
-                    .map((s) => s.trim())
-                    .filter((s) => s !== '');
+                    .map((accountIndex) => accountIndex.trim())
+                    .filter((accountIndex) => accountIndex !== '');
             }
-            // Load last pointer
             if (typeof stored.geminiAccountPointer === 'number') {
                 this.currentAccountPointer = stored.geminiAccountPointer;
             }
@@ -69,8 +67,8 @@ export class AuthManager {
         if (stored.geminiAccountIndices) {
             this.accountIndices = stored.geminiAccountIndices
                 .split(',')
-                .map((s) => s.trim())
-                .filter((s) => s !== '');
+                .map((accountIndex) => accountIndex.trim())
+                .filter((accountIndex) => accountIndex !== '');
         }
         if (this.accountIndices.length === 0) this.accountIndices = ['0'];
 

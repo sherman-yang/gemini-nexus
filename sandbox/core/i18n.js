@@ -37,26 +37,26 @@ export function formatT(key, values = {}) {
 
 export function applyTranslations() {
     const elements = document.querySelectorAll('[data-i18n]');
-    elements.forEach((el) => {
-        const key = el.getAttribute('data-i18n');
+    elements.forEach((element) => {
+        const key = element.getAttribute('data-i18n');
         const text = t(key);
-        if (text) el.textContent = text;
+        if (text) element.textContent = text;
     });
 
     const placeholders = document.querySelectorAll('[data-i18n-placeholder]');
-    placeholders.forEach((el) => {
-        const key = el.getAttribute('data-i18n-placeholder');
+    placeholders.forEach((element) => {
+        const key = element.getAttribute('data-i18n-placeholder');
         const text = t(key);
-        if (text) el.placeholder = text;
+        if (text) element.placeholder = text;
     });
 
     const titles = document.querySelectorAll('[data-i18n-title]');
-    titles.forEach((el) => {
-        const key = el.getAttribute('data-i18n-title');
+    titles.forEach((element) => {
+        const key = element.getAttribute('data-i18n-title');
         const text = t(key);
         if (text) {
-            el.title = text;
-            el.setAttribute('aria-label', text);
+            element.title = text;
+            element.setAttribute('aria-label', text);
         }
     });
 }

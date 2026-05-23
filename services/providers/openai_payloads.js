@@ -53,11 +53,11 @@ function buildOpenAIContent(text, images) {
         content.push({ type: 'text', text });
     }
 
-    images.forEach((img) => {
+    images.forEach((imageUrl) => {
         content.push({
             type: 'image_url',
             image_url: {
-                url: img,
+                url: imageUrl,
             },
         });
     });
@@ -83,10 +83,10 @@ function buildResponsesContent(text, images) {
         content.push({ type: 'input_text', text });
     }
 
-    images.forEach((img) => {
+    images.forEach((imageUrl) => {
         content.push({
             type: 'input_image',
-            image_url: img,
+            image_url: imageUrl,
         });
     });
 
@@ -109,14 +109,14 @@ export function buildChatMessages(prompt, systemInstruction, history, files) {
     }
 
     if (Array.isArray(history)) {
-        history.forEach((msg) => {
-            const attachments = getMessageAttachments(msg);
+        history.forEach((historyMessage) => {
+            const attachments = getMessageAttachments(historyMessage);
             messages.push({
-                role: msg.role === 'ai' ? 'assistant' : 'user',
+                role: historyMessage.role === 'ai' ? 'assistant' : 'user',
                 content:
-                    msg.role === 'user'
-                        ? buildOpenAIUserContent(msg.text, attachments)
-                        : buildOpenAIContent(msg.text, []),
+                    historyMessage.role === 'user'
+                        ? buildOpenAIUserContent(historyMessage.text, attachments)
+                        : buildOpenAIContent(historyMessage.text, []),
             });
         });
     }
@@ -133,14 +133,14 @@ export function buildResponsesInput(prompt, history, files) {
     const input = [];
 
     if (Array.isArray(history)) {
-        history.forEach((msg) => {
-            const attachments = getMessageAttachments(msg);
+        history.forEach((historyMessage) => {
+            const attachments = getMessageAttachments(historyMessage);
             input.push({
-                role: msg.role === 'ai' ? 'assistant' : 'user',
+                role: historyMessage.role === 'ai' ? 'assistant' : 'user',
                 content:
-                    msg.role === 'user'
-                        ? buildResponsesUserContent(msg.text, attachments)
-                        : buildResponsesContent(msg.text, []),
+                    historyMessage.role === 'user'
+                        ? buildResponsesUserContent(historyMessage.text, attachments)
+                        : buildResponsesContent(historyMessage.text, []),
             });
         });
     }

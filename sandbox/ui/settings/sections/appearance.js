@@ -1,3 +1,5 @@
+import { getSettingsElement } from '../dom.js';
+
 export class AppearanceSection {
     constructor(callbacks) {
         this.callbacks = callbacks || {};
@@ -7,10 +9,9 @@ export class AppearanceSection {
     }
 
     queryElements() {
-        const get = (id) => document.getElementById(id);
         this.elements = {
-            themeSelect: get('theme-select'),
-            languageSelect: get('language-select'),
+            themeSelect: getSettingsElement('theme-select'),
+            languageSelect: getSettingsElement('language-select'),
         };
     }
 

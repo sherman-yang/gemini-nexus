@@ -10,7 +10,7 @@
 
     window.GeminiToolbarIcons = {
         LOGO: markup`
-            <img src="${logoUrl}" style="width: 20px; height: 20px; display: block;" alt="Gemini">
+            <img src="${logoUrl}" class="toolbar-logo" alt="Gemini">
         `,
         PLUS: markup`
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"

@@ -17,6 +17,7 @@ import { renderMcpToolsUI } from './mcp_tools_view.js';
 import { t } from '../../../core/i18n.js';
 import { createPrefixedId } from '../../../../shared/utils/index.js';
 import { DOM_IDS } from '../constants.js';
+import { getSettingsElement } from '../dom.js';
 
 export function createMcpServerId() {
     return createPrefixedId('srv');
@@ -46,45 +47,44 @@ export class ConnectionSection {
     }
 
     queryElements() {
-        const get = (id) => document.getElementById(id);
         this.elements = {
-            providerSelect: get(DOM_IDS.PROVIDER_SELECT),
-            apiKeyContainer: get(DOM_IDS.API_KEY_CONTAINER),
+            providerSelect: getSettingsElement(DOM_IDS.PROVIDER_SELECT),
+            apiKeyContainer: getSettingsElement(DOM_IDS.API_KEY_CONTAINER),
 
-            officialFields: get(DOM_IDS.OFFICIAL_FIELDS),
-            officialBaseUrl: get(DOM_IDS.OFFICIAL_BASE_URL),
-            apiKeyInput: get(DOM_IDS.OFFICIAL_API_KEY),
-            officialModel: get(DOM_IDS.OFFICIAL_MODEL),
-            thinkingLevelSelect: get(DOM_IDS.OFFICIAL_THINKING_LEVEL),
-            officialWebSearchEnabled: get(DOM_IDS.OFFICIAL_WEB_SEARCH),
+            officialFields: getSettingsElement(DOM_IDS.OFFICIAL_FIELDS),
+            officialBaseUrl: getSettingsElement(DOM_IDS.OFFICIAL_BASE_URL),
+            apiKeyInput: getSettingsElement(DOM_IDS.OFFICIAL_API_KEY),
+            officialModel: getSettingsElement(DOM_IDS.OFFICIAL_MODEL),
+            thinkingLevelSelect: getSettingsElement(DOM_IDS.OFFICIAL_THINKING_LEVEL),
+            officialWebSearchEnabled: getSettingsElement(DOM_IDS.OFFICIAL_WEB_SEARCH),
 
-            openaiFields: get(DOM_IDS.OPENAI_FIELDS),
-            openaiBaseUrl: get(DOM_IDS.OPENAI_BASE_URL),
-            openaiApiKey: get(DOM_IDS.OPENAI_API_KEY),
-            openaiModel: get(DOM_IDS.OPENAI_MODEL),
-            openaiThinkingLevelSelect: get(DOM_IDS.OPENAI_THINKING_LEVEL),
-            openaiUseResponsesApi: get(DOM_IDS.OPENAI_USE_RESPONSES_API),
-            openaiWebSearch: get(DOM_IDS.OPENAI_WEB_SEARCH),
+            openaiFields: getSettingsElement(DOM_IDS.OPENAI_FIELDS),
+            openaiBaseUrl: getSettingsElement(DOM_IDS.OPENAI_BASE_URL),
+            openaiApiKey: getSettingsElement(DOM_IDS.OPENAI_API_KEY),
+            openaiModel: getSettingsElement(DOM_IDS.OPENAI_MODEL),
+            openaiThinkingLevelSelect: getSettingsElement(DOM_IDS.OPENAI_THINKING_LEVEL),
+            openaiUseResponsesApi: getSettingsElement(DOM_IDS.OPENAI_USE_RESPONSES_API),
+            openaiWebSearch: getSettingsElement(DOM_IDS.OPENAI_WEB_SEARCH),
 
-            mcpEnabled: get(DOM_IDS.MCP_ENABLED),
-            mcpFields: get(DOM_IDS.MCP_FIELDS),
-            mcpServerSelect: get(DOM_IDS.MCP_SERVER_SELECT),
-            mcpAddServer: get(DOM_IDS.MCP_ADD_SERVER),
-            mcpRemoveServer: get(DOM_IDS.MCP_REMOVE_SERVER),
-            mcpServerName: get(DOM_IDS.MCP_SERVER_NAME),
-            mcpTransport: get(DOM_IDS.MCP_TRANSPORT),
-            mcpServerUrl: get(DOM_IDS.MCP_SERVER_URL),
-            mcpHeaders: get(DOM_IDS.MCP_HEADERS),
-            mcpServerEnabled: get(DOM_IDS.MCP_SERVER_ENABLED),
-            mcpTestConnection: get(DOM_IDS.MCP_TEST_CONNECTION),
-            mcpTestStatus: get(DOM_IDS.MCP_TEST_STATUS),
-            mcpToolMode: get(DOM_IDS.MCP_TOOL_MODE),
-            mcpRefreshTools: get(DOM_IDS.MCP_REFRESH_TOOLS),
-            mcpEnableAllTools: get(DOM_IDS.MCP_ENABLE_ALL_TOOLS),
-            mcpDisableAllTools: get(DOM_IDS.MCP_DISABLE_ALL_TOOLS),
-            mcpToolSearch: get(DOM_IDS.MCP_TOOL_SEARCH),
-            mcpToolsSummary: get(DOM_IDS.MCP_TOOLS_SUMMARY),
-            mcpToolList: get(DOM_IDS.MCP_TOOL_LIST),
+            mcpEnabled: getSettingsElement(DOM_IDS.MCP_ENABLED),
+            mcpFields: getSettingsElement(DOM_IDS.MCP_FIELDS),
+            mcpServerSelect: getSettingsElement(DOM_IDS.MCP_SERVER_SELECT),
+            mcpAddServer: getSettingsElement(DOM_IDS.MCP_ADD_SERVER),
+            mcpRemoveServer: getSettingsElement(DOM_IDS.MCP_REMOVE_SERVER),
+            mcpServerName: getSettingsElement(DOM_IDS.MCP_SERVER_NAME),
+            mcpTransport: getSettingsElement(DOM_IDS.MCP_TRANSPORT),
+            mcpServerUrl: getSettingsElement(DOM_IDS.MCP_SERVER_URL),
+            mcpHeaders: getSettingsElement(DOM_IDS.MCP_HEADERS),
+            mcpServerEnabled: getSettingsElement(DOM_IDS.MCP_SERVER_ENABLED),
+            mcpTestConnection: getSettingsElement(DOM_IDS.MCP_TEST_CONNECTION),
+            mcpTestStatus: getSettingsElement(DOM_IDS.MCP_TEST_STATUS),
+            mcpToolMode: getSettingsElement(DOM_IDS.MCP_TOOL_MODE),
+            mcpRefreshTools: getSettingsElement(DOM_IDS.MCP_REFRESH_TOOLS),
+            mcpEnableAllTools: getSettingsElement(DOM_IDS.MCP_ENABLE_ALL_TOOLS),
+            mcpDisableAllTools: getSettingsElement(DOM_IDS.MCP_DISABLE_ALL_TOOLS),
+            mcpToolSearch: getSettingsElement(DOM_IDS.MCP_TOOL_SEARCH),
+            mcpToolsSummary: getSettingsElement(DOM_IDS.MCP_TOOLS_SUMMARY),
+            mcpToolList: getSettingsElement(DOM_IDS.MCP_TOOL_LIST),
         };
     }
 
@@ -138,28 +138,28 @@ export class ConnectionSection {
             this.updateMcpVisibility(mcpEnabled.checked);
         }
 
-        // Servers list (preferred)
         const servers = data && Array.isArray(data.mcpServers) ? data.mcpServers : null;
         const activeId =
             data && typeof data.mcpActiveServerId === 'string' ? data.mcpActiveServerId : null;
 
         if (servers && servers.length > 0) {
-            this.mcpServers = servers.map((s) => ({
-                id: s.id || this._makeServerId(),
-                name: s.name || '',
-                transport: s.transport || DEFAULT_MCP_TRANSPORT,
-                url: s.url || '',
-                headers: normalizeMcpHeaders(s.headers),
-                enabled: s.enabled !== false,
-                toolMode: s.toolMode === 'selected' ? 'selected' : 'all',
-                enabledTools: Array.isArray(s.enabledTools) ? s.enabledTools : [],
+            this.mcpServers = servers.map((serverConfig) => ({
+                id: serverConfig.id || this._makeServerId(),
+                name: serverConfig.name || '',
+                transport: serverConfig.transport || DEFAULT_MCP_TRANSPORT,
+                url: serverConfig.url || '',
+                headers: normalizeMcpHeaders(serverConfig.headers),
+                enabled: serverConfig.enabled !== false,
+                toolMode: serverConfig.toolMode === 'selected' ? 'selected' : 'all',
+                enabledTools: Array.isArray(serverConfig.enabledTools)
+                    ? serverConfig.enabledTools
+                    : [],
             }));
             this.mcpActiveServerId =
-                activeId && this.mcpServers.some((s) => s.id === activeId)
+                activeId && this.mcpServers.some((serverConfig) => serverConfig.id === activeId)
                     ? activeId
                     : this.mcpServers[0].id;
         } else {
-            // Legacy single server fields
             const legacyUrl = data?.mcpServerUrl || '';
             const legacyTransport = data?.mcpTransport || DEFAULT_MCP_TRANSPORT;
             const server = this._getDefaultServer();
@@ -195,8 +195,10 @@ export class ConnectionSection {
 
         this._saveCurrentServerEdits();
         const servers = Array.isArray(this.mcpServers) ? this.mcpServers : [];
-        // Get the first enabled server for legacy compatibility
-        const firstEnabled = servers.find((s) => s.enabled !== false && s.url && s.url.trim());
+        const firstEnabled = servers.find(
+            (serverConfig) =>
+                serverConfig.enabled !== false && serverConfig.url && serverConfig.url.trim()
+        );
 
         return {
             provider: providerSelect ? providerSelect.value : DEFAULT_PROVIDER,
@@ -222,10 +224,8 @@ export class ConnectionSection {
 
             mcpEnabled: mcpEnabled ? mcpEnabled.checked === true : false,
             mcpServers: servers,
-            // Keep mcpActiveServerId for backward compatibility but it's no longer required
             mcpActiveServerId: this.mcpActiveServerId || (servers[0] ? servers[0].id : null),
 
-            // Legacy fields for single-server backward compatibility
             mcpTransport: firstEnabled
                 ? firstEnabled.transport || DEFAULT_MCP_TRANSPORT
                 : DEFAULT_MCP_TRANSPORT,
@@ -260,7 +260,9 @@ export class ConnectionSection {
     _getActiveServer() {
         if (!this.mcpServers || this.mcpServers.length === 0) return null;
         const activeId = this.mcpActiveServerId;
-        const match = activeId ? this.mcpServers.find((s) => s.id === activeId) : null;
+        const match = activeId
+            ? this.mcpServers.find((serverConfig) => serverConfig.id === activeId)
+            : null;
         return match || this.mcpServers[0];
     }
 
@@ -366,7 +368,9 @@ export class ConnectionSection {
         const url = (server.url || '').trim();
         const headers = normalizeMcpHeaders(server.headers);
         const headersKey = Object.keys(headers)
-            .sort((a, b) => a.localeCompare(b))
+            .sort((leftHeaderName, rightHeaderName) =>
+                leftHeaderName.localeCompare(rightHeaderName)
+            )
             .map((key) => `${key}:${headers[key]}`)
             .join('\n');
         return `${transport}:${url}:${headersKey}`;

@@ -136,4 +136,12 @@ describe('TabSelectorController browser control bar', () => {
 
         expect(trigger.innerHTML).toBe(expected.innerHTML);
     });
+
+    it('uses the shared browser tab fallback icon in the control bar', () => {
+        const fallbackIcon = document.getElementById('browser-control-fallback-icon');
+        const expected = document.createElement('span');
+        expected.innerHTML = TemplateIcons.BROWSER_TAB;
+
+        expect(fallbackIcon.innerHTML.trim()).toBe(expected.innerHTML.trim());
+    });
 });

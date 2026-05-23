@@ -17,8 +17,8 @@ export function getOwnerTabIdFromLocation(locationLike = window.location) {
 export class StateManager {
     constructor(frameManager) {
         this.frame = frameManager;
-        this.data = null; // Pre-fetched data cache
-        this.sessionData = null;
+        this.localStorageData = null;
+        this.sessionStorageData = null;
         this.ownerTabId = getOwnerTabIdFromLocation();
         this.currentTabId = this.ownerTabId ?? undefined;
         this.uiIsReady = false;
@@ -26,12 +26,11 @@ export class StateManager {
     }
 
     init() {
-        // Start fetching bulk data immediately
         chrome.storage.local.get(
             [
                 'geminiSessions',
                 'pendingSessionId',
-                'pendingMode', // Fetch pending mode (e.g. browser_control)
+                'pendingMode',
                 'geminiShortcuts',
                 'pendingImage',
                 'geminiSidebarBehavior',
@@ -45,13 +44,13 @@ export class StateManager {
                 'geminiContextRecentTurns',
             ],
             (result) => {
-                this.data = result;
+                this.localStorageData = result;
                 this.trySendInitData();
             }
         );
 
         chrome.storage.session.get(['geminiSidePanelSessionBindings'], (result) => {
-            this.sessionData = result;
+            this.sessionStorageData = result;
             this.trySendInitData();
         });
 
@@ -66,7 +65,7 @@ export class StateManager {
 
         chrome.storage.onChanged.addListener((changes, areaName) => {
             if (areaName === 'session' && changes.geminiSidePanelSessionBindings) {
-                this.sessionData = {
+                this.sessionStorageData = {
                     geminiSidePanelSessionBindings:
                         changes.geminiSidePanelSessionBindings.newValue || {},
                 };
@@ -105,7 +104,6 @@ export class StateManager {
             }
         });
 
-        // Safety Timeout: Force reveal if handshake fails
         setTimeout(() => {
             if (!this.uiIsReady) {
                 console.warn('UI_READY signal timeout, forcing skeleton removal');
@@ -120,12 +118,10 @@ export class StateManager {
     }
 
     trySendInitData() {
-        // Only proceed if we have data AND the UI has signaled readiness
-        // (Or if we can detect the window exists, though UI_READY is safer for logic)
         if (
             (!this.uiIsReady && !this.hasInitialized) ||
-            !this.data ||
-            this.sessionData === null ||
+            !this.localStorageData ||
+            this.sessionStorageData === null ||
             this.currentTabId === undefined
         )
             return;
@@ -136,7 +132,7 @@ export class StateManager {
         const frameWindow = this.frame.getWindow();
         if (!frameWindow) return;
 
-        const restoreMessages = createInitialRestoreMessages(this.data, {
+        const restoreMessages = createInitialRestoreMessages(this.localStorageData, {
             theme: localStorage.getItem('geminiTheme') || 'system',
             language: localStorage.getItem('geminiLanguage') || 'system',
             appVersion: `v${chrome.runtime.getManifest().version}`,
@@ -147,67 +143,72 @@ export class StateManager {
         restoreMessages.afterTabContext.forEach((message) => this.frame.postMessage(message));
 
         // Replay deferred actions captured before the side panel was ready.
-        if (this.data.pendingSessionId) {
+        if (this.localStorageData.pendingSessionId) {
             this.frame.postMessage({
                 action: 'BACKGROUND_MESSAGE',
-                payload: { action: 'SWITCH_SESSION', sessionId: this.data.pendingSessionId },
+                payload: {
+                    action: 'SWITCH_SESSION',
+                    sessionId: this.localStorageData.pendingSessionId,
+                },
             });
             chrome.storage.local.remove('pendingSessionId');
-            delete this.data.pendingSessionId;
+            delete this.localStorageData.pendingSessionId;
         }
 
-        if (this.data.pendingImage) {
+        if (this.localStorageData.pendingImage) {
             this.frame.postMessage({
                 action: 'BACKGROUND_MESSAGE',
-                payload: this.data.pendingImage,
+                payload: this.localStorageData.pendingImage,
             });
             chrome.storage.local.remove('pendingImage');
-            delete this.data.pendingImage;
+            delete this.localStorageData.pendingImage;
         }
 
-        if (this.data.pendingMode === 'browser_control') {
+        if (this.localStorageData.pendingMode === 'browser_control') {
             this.frame.postMessage({
                 action: 'BACKGROUND_MESSAGE',
                 payload: { action: 'ACTIVATE_BROWSER_CONTROL' },
             });
             chrome.storage.local.remove('pendingMode');
-            delete this.data.pendingMode;
+            delete this.localStorageData.pendingMode;
         }
 
         restoreMessages.afterPendingActions.forEach((message) => this.frame.postMessage(message));
     }
 
     syncLocalStorageChanges(changes) {
-        if (!this.data) return;
+        if (!this.localStorageData) return;
 
         const changedKeys = Object.keys(changes);
         for (const key of changedKeys) {
             const newValue = changes[key].newValue;
-            if (newValue === undefined) delete this.data[key];
-            else this.data[key] = newValue;
+            if (newValue === undefined) delete this.localStorageData[key];
+            else this.localStorageData[key] = newValue;
         }
 
         if (!this.hasInitialized) return;
 
         if (Object.prototype.hasOwnProperty.call(changes, 'geminiTheme')) {
-            localStorage.setItem('geminiTheme', this.data.geminiTheme || 'system');
+            localStorage.setItem('geminiTheme', this.localStorageData.geminiTheme || 'system');
         }
         if (Object.prototype.hasOwnProperty.call(changes, 'geminiLanguage')) {
-            localStorage.setItem('geminiLanguage', this.data.geminiLanguage || 'system');
+            localStorage.setItem(
+                'geminiLanguage',
+                this.localStorageData.geminiLanguage || 'system'
+            );
         }
 
-        createLocalStorageRestoreMessages(this.data, changedKeys).forEach((message) =>
+        createLocalStorageRestoreMessages(this.localStorageData, changedKeys).forEach((message) =>
             this.frame.postMessage(message)
         );
     }
 
     updateSessions(sessions) {
-        if (this.data) this.data.geminiSessions = sessions;
-        // Note: No need to save to storage here, usually comes from background broadcast
+        if (this.localStorageData) this.localStorageData.geminiSessions = sessions;
     }
 
     save(key, value) {
-        if (this.data) this.data[key] = value;
+        if (this.localStorageData) this.localStorageData[key] = value;
 
         const update = {};
         update[key] = value;
@@ -226,7 +227,7 @@ export class StateManager {
     }
 
     getSessionBindings() {
-        return this.sessionData?.geminiSidePanelSessionBindings || {};
+        return this.sessionStorageData?.geminiSidePanelSessionBindings || {};
     }
 
     postCurrentTabContext() {
@@ -255,7 +256,7 @@ export class StateManager {
 
         const nextBindings = { ...sessionBindings };
         delete nextBindings[tabId];
-        this.sessionData = { geminiSidePanelSessionBindings: nextBindings };
+        this.sessionStorageData = { geminiSidePanelSessionBindings: nextBindings };
         chrome.storage.session.set({ geminiSidePanelSessionBindings: nextBindings });
     }
 }

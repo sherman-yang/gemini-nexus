@@ -19,15 +19,15 @@ export async function readSseJson(response, onEvent) {
             const dataStr = trimmed.substring(6);
             if (dataStr === '[DONE]') continue;
 
-            let data;
+            let eventPayload;
             try {
-                data = JSON.parse(dataStr);
+                eventPayload = JSON.parse(dataStr);
             } catch {
                 // Ignore malformed or incomplete stream events.
                 continue;
             }
 
-            await onEvent(data);
+            await onEvent(eventPayload);
         }
     }
 }

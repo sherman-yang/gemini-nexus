@@ -98,12 +98,11 @@ export class SidebarController {
 
         let displayList = this.allSessions;
 
-        // Lazy Init Fuse
         this._initSearch();
 
         if (query.trim() && this.fuse) {
             const results = this.fuse.search(query);
-            displayList = results.map((r) => r.item);
+            displayList = results.map((searchResult) => searchResult.item);
         }
 
         this._renderDOM(displayList);
@@ -112,7 +111,6 @@ export class SidebarController {
     renderList(sessions, currentId, itemCallbacks, renderState = {}) {
         if (!this.listEl) return;
 
-        // Cache data for searching
         this.allSessions = sessions;
         this.currentSessionId = currentId;
         this.itemCallbacks = itemCallbacks;
@@ -121,10 +119,8 @@ export class SidebarController {
             generatingSessionId: renderState.generatingSessionId || null,
         };
 
-        // Reset Fuse index as data changed
         this.fuse = null;
 
-        // Check if there is an active search query
         const currentQuery = this.searchInput ? this.searchInput.value : '';
         if (currentQuery.trim()) {
             this.handleSearch(currentQuery);

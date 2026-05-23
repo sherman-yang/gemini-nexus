@@ -27,7 +27,7 @@ const WEB_MODEL_HEADER_CONFIGS = {
         mode: 1,
         featureMode: 1,
     },
-    'e6fa609c3fa255c0': {
+    e6fa609c3fa255c0: {
         hash: 'e6fa609c3fa255c0',
         mode: 3,
         featureMode: 1,

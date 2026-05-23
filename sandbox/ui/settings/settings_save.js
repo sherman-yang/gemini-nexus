@@ -23,23 +23,23 @@ export function normalizeRecentTurns(value) {
     return Math.min(50, Math.max(1, parsed));
 }
 
-export function buildGeneralSettingsForSave(data) {
+export function buildGeneralSettingsForSave(formData) {
     return {
-        shortcuts: data.shortcuts,
-        textSelectionEnabled: data.textSelection,
-        textSelectionBlacklist: data.textSelectionBlacklist || '',
-        customSelectionTools: normalizeCustomSelectionTools(data.customSelectionTools),
-        imageToolsEnabled: data.imageTools,
-        accountIndices: normalizeAccountIndices(data.accountIndices),
-        sidebarBehavior: data.sidebarBehavior || 'auto',
-        sidePanelScope: data.sidePanelScope || DEFAULT_SIDE_PANEL_SCOPE,
+        shortcuts: formData.shortcuts,
+        textSelectionEnabled: formData.textSelection,
+        textSelectionBlacklist: formData.textSelectionBlacklist || '',
+        customSelectionTools: normalizeCustomSelectionTools(formData.customSelectionTools),
+        imageToolsEnabled: formData.imageTools,
+        accountIndices: normalizeAccountIndices(formData.accountIndices),
+        sidebarBehavior: formData.sidebarBehavior || 'auto',
+        sidePanelScope: formData.sidePanelScope || DEFAULT_SIDE_PANEL_SCOPE,
     };
 }
 
-export function buildContextSettingsForSave(data) {
+export function buildContextSettingsForSave(formData) {
     return {
-        mode: data.contextMode === 'recent' ? 'recent' : DEFAULT_CONTEXT_MODE,
-        recentTurns: normalizeRecentTurns(data.contextRecentTurns),
+        mode: formData.contextMode === 'recent' ? 'recent' : DEFAULT_CONTEXT_MODE,
+        recentTurns: normalizeRecentTurns(formData.contextRecentTurns),
     };
 }
 

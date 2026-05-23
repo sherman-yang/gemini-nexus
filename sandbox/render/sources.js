@@ -32,7 +32,9 @@ function escapeRegExp(value) {
 }
 
 function createSourceUrlPattern(sourceUrls) {
-    const urls = [...sourceUrls].filter(Boolean).sort((a, b) => b.length - a.length);
+    const urls = [...sourceUrls]
+        .filter(Boolean)
+        .sort((leftSourceUrl, rightSourceUrl) => rightSourceUrl.length - leftSourceUrl.length);
     if (urls.length === 0) return null;
     return new RegExp(`(?:<)?(${urls.map(escapeRegExp).join('|')})(?:>)?(?=$|[\\s).,，。:：;；>])`);
 }

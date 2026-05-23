@@ -35,7 +35,7 @@ export class BrowserConnection {
     _cleanupState() {
         this.attached = false;
         this.currentTabId = null;
-        this.onDetachCallbacks.forEach((cb) => cb());
+        this.onDetachCallbacks.forEach((callback) => callback());
     }
 
     addListener(callback) {
@@ -66,16 +66,19 @@ export class BrowserConnection {
         return new Promise((resolve, reject) => {
             chrome.debugger.attach({ tabId }, '1.3', async () => {
                 if (chrome.runtime.lastError) {
-                    const msg = chrome.runtime.lastError.message;
+                    const attachErrorMessage = chrome.runtime.lastError.message;
                     // Suppress common expected errors for restricted targets to avoid log noise
                     if (
-                        msg.includes('restricted URL') ||
-                        msg.includes('Cannot access') ||
-                        msg.includes('Attach to webui')
+                        attachErrorMessage.includes('restricted URL') ||
+                        attachErrorMessage.includes('Cannot access') ||
+                        attachErrorMessage.includes('Attach to webui')
                     ) {
-                        debugLog('[BrowserConnection] Attach skipped (restricted):', msg);
+                        debugLog(
+                            '[BrowserConnection] Attach skipped (restricted):',
+                            attachErrorMessage
+                        );
                     } else {
-                        console.warn('[BrowserConnection] Attach failed:', msg);
+                        console.warn('[BrowserConnection] Attach failed:', attachErrorMessage);
                     }
                     // Resolve anyway to allow fallback actions (like navigation) to proceed without debugger
                     resolve();

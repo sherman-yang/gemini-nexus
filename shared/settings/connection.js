@@ -55,49 +55,57 @@ export function getOpenAIWebSearchStorageKeys({ includeLegacyFallbacks = false }
         : GEMINI_OPENAI_WEB_SEARCH_KEYS;
 }
 
-export function getConnectionProvider(data = {}) {
+export function getConnectionProvider(storageData = {}) {
     return (
-        data.geminiProvider || (data.geminiUseOfficialApi === true ? 'official' : DEFAULT_PROVIDER)
+        storageData.geminiProvider ||
+        (storageData.geminiUseOfficialApi === true ? 'official' : DEFAULT_PROVIDER)
     );
 }
 
-export function getSelectedModelForProvider(data = {}, provider = getConnectionProvider(data)) {
+export function getSelectedModelForProvider(
+    storageData = {},
+    provider = getConnectionProvider(storageData)
+) {
     if (provider === 'openai') {
-        return data.geminiOpenaiSelectedModel || data.geminiModel || DEFAULT_OPENAI_MODEL;
+        return (
+            storageData.geminiOpenaiSelectedModel || storageData.geminiModel || DEFAULT_OPENAI_MODEL
+        );
     }
 
-    return data.geminiModel || DEFAULT_STORED_GEMINI_MODEL;
+    return storageData.geminiModel || DEFAULT_STORED_GEMINI_MODEL;
 }
 
-export function createConnectionSettingsPayload(data = {}, options = {}) {
-    const provider = getConnectionProvider(data);
-    const selectedModel = getSelectedModelForProvider(data, provider);
+export function createConnectionSettingsPayload(storageData = {}, options = {}) {
+    const provider = getConnectionProvider(storageData);
+    const selectedModel = getSelectedModelForProvider(storageData, provider);
     const openaiSettings = normalizeOpenAIWebSearchSettings(
-        data,
+        storageData,
         getOpenAIWebSearchStorageKeys(options)
     );
 
     return {
         provider,
-        useOfficialApi: data.geminiUseOfficialApi === true,
+        useOfficialApi: storageData.geminiUseOfficialApi === true,
         selectedModel,
-        openaiSelectedModel: data.geminiOpenaiSelectedModel || '',
-        officialBaseUrl: data.geminiOfficialBaseUrl || DEFAULT_OFFICIAL_BASE_URL,
-        apiKey: data.geminiApiKey || '',
-        officialModel: data.geminiOfficialModel || DEFAULT_OFFICIAL_MODELS,
-        thinkingLevel: data.geminiThinkingLevel || DEFAULT_THINKING_LEVEL,
-        officialWebSearch: data.geminiOfficialWebSearch === true,
-        openaiBaseUrl: data.geminiOpenaiBaseUrl || '',
-        openaiApiKey: data.geminiOpenaiApiKey || '',
-        openaiModel: data.geminiOpenaiModel || '',
-        openaiThinkingLevel: data.geminiOpenaiThinkingLevel || DEFAULT_THINKING_LEVEL,
+        openaiSelectedModel: storageData.geminiOpenaiSelectedModel || '',
+        officialBaseUrl: storageData.geminiOfficialBaseUrl || DEFAULT_OFFICIAL_BASE_URL,
+        apiKey: storageData.geminiApiKey || '',
+        officialModel: storageData.geminiOfficialModel || DEFAULT_OFFICIAL_MODELS,
+        thinkingLevel: storageData.geminiThinkingLevel || DEFAULT_THINKING_LEVEL,
+        officialWebSearch: storageData.geminiOfficialWebSearch === true,
+        openaiBaseUrl: storageData.geminiOpenaiBaseUrl || '',
+        openaiApiKey: storageData.geminiOpenaiApiKey || '',
+        openaiModel: storageData.geminiOpenaiModel || '',
+        openaiThinkingLevel: storageData.geminiOpenaiThinkingLevel || DEFAULT_THINKING_LEVEL,
         openaiUseResponsesApi: openaiSettings.useResponsesApi,
         openaiWebSearch: openaiSettings.webSearch,
-        mcpEnabled: data.geminiMcpEnabled === true,
-        mcpTransport: data.geminiMcpTransport || DEFAULT_MCP_TRANSPORT,
-        mcpServerUrl: data.geminiMcpServerUrl || DEFAULT_MCP_HTTP_URL,
-        mcpServers: Array.isArray(data.geminiMcpServers) ? data.geminiMcpServers : null,
-        mcpActiveServerId: data.geminiMcpActiveServerId || null,
+        mcpEnabled: storageData.geminiMcpEnabled === true,
+        mcpTransport: storageData.geminiMcpTransport || DEFAULT_MCP_TRANSPORT,
+        mcpServerUrl: storageData.geminiMcpServerUrl || DEFAULT_MCP_HTTP_URL,
+        mcpServers: Array.isArray(storageData.geminiMcpServers)
+            ? storageData.geminiMcpServers
+            : null,
+        mcpActiveServerId: storageData.geminiMcpActiveServerId || null,
     };
 }
 

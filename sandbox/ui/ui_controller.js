@@ -8,14 +8,12 @@ import { resizeSelectToSelectedOption } from './model_select_width.js';
 
 export class UIController {
     constructor(elements) {
-        // Initialize Sub-Controllers
         this.chat = new ChatController(elements);
 
         this.sidebar = new SidebarController(elements, {
             onOverlayClick: () => this.settings.close(),
         });
 
-        // Settings and Viewer now self-manage their DOM
         this.settings = new SettingsController({
             onOpen: () => this.sidebar.close(),
             onSettingsChanged: (connectionSettings, meta = {}) => {
@@ -30,7 +28,6 @@ export class UIController {
 
         this.tabSelector = new TabSelectorController();
 
-        // Properties exposed for external use (AppController/MessageHandler)
         this.inputFn = this.chat.inputFn;
         this.historyDiv = this.chat.historyDiv;
         this.sendBtn = this.chat.sendBtn;
@@ -38,7 +35,6 @@ export class UIController {
         this.tabSwitcherBtn = document.getElementById('tab-switcher-btn');
         this.layoutResizeFrame = null;
 
-        // Initialize Layout Detection
         this.checkLayout();
         window.addEventListener('resize', () => this.scheduleLayoutCheck());
     }
@@ -66,8 +62,6 @@ export class UIController {
         });
     }
 
-    // --- Dynamic Model List ---
-
     updateModelList(settings) {
         if (!this.modelSelect) return;
 
@@ -87,11 +81,9 @@ export class UIController {
         if (match) {
             this.modelSelect.value = preferred;
         } else {
-            // Default to first option
             if (options.length > 0) {
                 this.modelSelect.value = options[0].value;
             }
-            // Dispatch change to update app state
             this.modelSelect.dispatchEvent(new Event('change'));
         }
 
@@ -102,9 +94,6 @@ export class UIController {
         resizeSelectToSelectedOption(this.modelSelect);
     }
 
-    // --- Delegation Methods ---
-
-    // Chat / Input
     updateStatus(text) {
         this.chat.updateStatus(text);
     }
@@ -134,7 +123,6 @@ export class UIController {
         this.sidebar.renderList(sessions, currentId, callbacks, renderState);
     }
 
-    // Settings
     updateShortcuts(payload) {
         this.settings.updateShortcuts(payload);
     }

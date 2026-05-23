@@ -137,15 +137,12 @@ export class MessageHandler {
 
         if (!this.isCurrentSessionMessage(request)) return;
 
-        // If we don't have a bubble yet, create one
         if (!this.streamingBubble) {
             createStreamingBubbleHelper(this, state);
         }
 
-        // Update content if text or thoughts exist
         this.streamingBubble.update(displayText, request.thoughts, { isStreaming: true });
 
-        // Ensure UI state reflects generation
         if (!this.app.isGenerating) {
             this.app.isGenerating = true;
             this.ui.setLoading(true);

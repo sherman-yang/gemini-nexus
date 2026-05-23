@@ -1,9 +1,5 @@
 import { t } from '../core/i18n.js';
-
-const EDIT_ICON =
-    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>';
-const SAVE_ICON =
-    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+import { TemplateIcons } from '../ui/templates/icons.js';
 
 export function createMessageEditControl({
     messageEl,
@@ -16,7 +12,7 @@ export function createMessageEditControl({
     editBtn.className = 'edit-btn';
     editBtn.title = t('editMessage');
     editBtn.setAttribute('aria-label', t('editMessage'));
-    editBtn.innerHTML = EDIT_ICON;
+    editBtn.innerHTML = TemplateIcons.EDIT;
 
     let cancelActiveEdit = null;
 
@@ -53,7 +49,7 @@ export function createMessageEditControl({
         saveBtn.className = 'message-edit-save';
         saveBtn.title = t('saveEdit');
         saveBtn.setAttribute('aria-label', t('saveEdit'));
-        saveBtn.innerHTML = SAVE_ICON;
+        saveBtn.innerHTML = TemplateIcons.SEND;
 
         actions.appendChild(cancelBtn);
         actions.appendChild(saveBtn);

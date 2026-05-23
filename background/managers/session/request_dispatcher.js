@@ -223,7 +223,6 @@ export class RequestDispatcher {
     async _handleOfficialRequest(request, settings, files, onUpdate, signal) {
         if (!settings.apiKey) throw new Error('API Key is missing. Please check settings.');
 
-        // Fetch History
         const history = await resolveRequestHistory(request, files);
         const context = await prepareManagedContext(
             request,

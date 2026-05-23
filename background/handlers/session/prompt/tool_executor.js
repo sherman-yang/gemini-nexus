@@ -86,7 +86,6 @@ export class ToolExecutor {
                     output = execResult;
                 }
             } else {
-                // Check if MCP is enabled
                 const servers = Array.isArray(request.mcpServers) ? request.mcpServers : [];
                 const isMultiServer = request.enableMcpTools === true && servers.length > 0;
                 const mcpEnabled =
@@ -102,14 +101,12 @@ export class ToolExecutor {
                 source = 'mcp_remote';
                 let remote;
 
-                // Check if this is a multi-server tool ID (format: serverId__toolName)
                 const isMultiServerTool = toolName.includes('__');
 
                 if (isMultiServerTool && isMultiServer) {
                     const { server, routedToolName } = this.resolveRoutedMcpTool(toolName, servers);
                     this.assertMcpToolEnabled(server, routedToolName);
 
-                    // Multi-server mode: route by tool ID
                     remote = await this.mcpManager.callToolById(
                         toolName,
                         toolCommand.args || {},
@@ -118,20 +115,22 @@ export class ToolExecutor {
                 } else if (isMultiServer) {
                     // Multi-server but plain tool name - try to find it in any server
                     const allTools = await this.mcpManager.listAllActiveTools(servers);
-                    const matchingTools = allTools.filter((t) => t.name === toolName);
+                    const matchingTools = allTools.filter((tool) => tool.name === toolName);
 
                     if (matchingTools.length === 0) {
                         throw new Error(`Tool '${toolName}' not found in any enabled MCP server.`);
                     }
 
                     const matchingTool = matchingTools.find((tool) => {
-                        const server = servers.find((s) => s.id === tool._serverId);
+                        const server = servers.find(
+                            (serverConfig) => serverConfig.id === tool._serverId
+                        );
                         return this.isMcpToolEnabled(server, toolName);
                     });
 
                     if (!matchingTool) {
                         const firstServer = servers.find(
-                            (s) => s.id === matchingTools[0]._serverId
+                            (serverConfig) => serverConfig.id === matchingTools[0]._serverId
                         );
                         this.assertMcpToolEnabled(firstServer, toolName);
                     }
