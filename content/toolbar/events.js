@@ -6,6 +6,7 @@
         ['translate', 'translate'],
         ['explain', 'explain'],
         ['summarize', 'summarize'],
+        ['readSelection', 'read_selection'],
     ];
 
     const IMAGE_MENU_ACTIONS = [

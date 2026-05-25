@@ -222,4 +222,37 @@ describe('ToolbarDispatcher', () => {
             { x: 4, y: 8 }
         );
     });
+
+    it('dispatches read selection through the speech reader path', async () => {
+        const controller = {
+            ui: {
+                getSelectedModel: vi.fn(() => 'gemini-3-pro'),
+            },
+            actions: {},
+            imageDetector: {},
+            inputManager: {},
+            currentSelection: 'Selected text',
+            readSelectionAloud: vi.fn(),
+        };
+
+        await new window.GeminiToolbarDispatcher(controller).dispatch('read_selection');
+
+        expect(controller.readSelectionAloud).toHaveBeenCalledTimes(1);
+    });
+
+    it('dispatches read page through the speech reader path', async () => {
+        const controller = {
+            ui: {
+                getSelectedModel: vi.fn(() => 'gemini-3-pro'),
+            },
+            actions: {},
+            imageDetector: {},
+            inputManager: {},
+            readPageAloud: vi.fn(),
+        };
+
+        await new window.GeminiToolbarDispatcher(controller).dispatch('read_page');
+
+        expect(controller.readPageAloud).toHaveBeenCalledTimes(1);
+    });
 });

@@ -158,6 +158,15 @@
                         );
                         break;
 
+                    case 'read_selection':
+                        if (!this.controller.currentSelection) return;
+                        this.controller.readSelectionAloud();
+                        break;
+
+                    case 'read_page':
+                        this.controller.readPageAloud();
+                        break;
+
                     case 'grammar':
                         if (!this.controller.currentSelection) return;
                         this.ui.setGrammarMode(

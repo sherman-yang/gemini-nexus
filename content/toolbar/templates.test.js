@@ -32,6 +32,7 @@ describe('GeminiToolbarTemplates', () => {
                 translate: 'Translate',
                 explain: 'Explain',
                 summarize: 'Summarize',
+                readSelection: 'Read selection aloud',
                 customSelectionMore: 'More custom tools',
                 aiTools: 'AI tools',
                 chatWithImage: 'Chat with image',
@@ -140,5 +141,16 @@ describe('GeminiToolbarTemplates', () => {
         expect(wrapper.querySelector('#custom-selection-tools')).not.toBeNull();
         expect(wrapper.querySelector('#custom-selection-more')).not.toBeNull();
         expect(wrapper.querySelector('#btn-custom-selection-more')).not.toBeNull();
+    });
+
+    it('renders a read selection button in the text toolbar', () => {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = window.GeminiToolbarTemplates.mainStructure;
+
+        const button = wrapper.querySelector('#btn-read-selection');
+
+        expect(button).not.toBeNull();
+        expect(button.getAttribute('title')).toBe('Read selection aloud');
+        expect(button.querySelector('[data-icon="SPEAKER"]')).not.toBeNull();
     });
 });

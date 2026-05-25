@@ -55,6 +55,7 @@
                     translate: getToolbarElement('btn-translate'),
                     explain: getToolbarElement('btn-explain'),
                     summarize: getToolbarElement('btn-summarize'),
+                    readSelection: getToolbarElement('btn-read-selection'),
                     customSelectionMore: getToolbarElement('btn-custom-selection-more'),
                     headerClose: getToolbarElement('btn-header-close'),
                     stop: getToolbarElement('btn-stop-gen'),

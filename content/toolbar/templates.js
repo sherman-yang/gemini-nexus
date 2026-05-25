@@ -59,6 +59,7 @@
             <button class="btn" id="btn-translate" title="${toolbarStrings.translate}">${ICONS.TRANSLATE}</button>
             <button class="btn" id="btn-explain" title="${toolbarStrings.explain}">${ICONS.EXPLAIN}</button>
             <button class="btn" id="btn-summarize" title="${toolbarStrings.summarize}">${ICONS.SUMMARIZE}</button>
+            <button class="btn" id="btn-read-selection" title="${toolbarStrings.readSelection}">${ICONS.SPEAKER}</button>
             <div class="custom-selection-tools" id="custom-selection-tools"></div>
             <div class="custom-selection-more hidden" id="custom-selection-more">
                 <button class="btn" id="btn-custom-selection-more" title="${toolbarStrings.customSelectionMore || 'More custom tools'}">${ICONS.TOOLS}</button>

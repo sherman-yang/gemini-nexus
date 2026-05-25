@@ -109,6 +109,13 @@
             translate: isZh ? '翻译' : 'Translate',
             explain: isZh ? '解释' : 'Explain',
             summarize: isZh ? '总结' : 'Summarize',
+            readSelection: isZh ? '朗读选中内容' : 'Read selection aloud',
+            readPage: isZh ? '朗读当前网页' : 'Read page aloud',
+            stopReading: isZh ? '停止朗读' : 'Stop reading',
+            speechUnsupported: isZh
+                ? '当前浏览器不支持语音朗读。'
+                : 'Text-to-speech is not supported in this browser.',
+            speechNoText: isZh ? '没有可朗读的文本。' : 'No readable text found.',
             customSelectionMore: isZh ? '更多自定义工具' : 'More custom tools',
             askImage: isZh ? '询问这张图片' : 'Ask AI about this image',
             close: isZh ? '关闭' : 'Close',

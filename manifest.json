@@ -70,6 +70,7 @@
                 "content/toolbar/bridge.js",
                 "content/toolbar/drag_controller.js",
                 "content/toolbar/i18n.js",
+                "content/speech_reader.js",
                 "content/toolbar/model_options.js",
                 "content/toolbar/templates.js",
                 "content/toolbar/view/layout.js",

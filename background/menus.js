@@ -5,6 +5,8 @@ const WEB_PAGE_PATTERNS = ['http://*/*', 'https://*/*'];
 const MENU_MODES = {
     'menu-ask': 'ask',
     'menu-page-chat': 'page_chat',
+    'menu-read-page': 'read_page',
+    'menu-read-selection': 'read_selection',
     'menu-ocr': 'ocr',
     'menu-screenshot-translate': 'screenshot_translate',
     'menu-snip': 'snip',
@@ -76,6 +78,8 @@ export function setupContextMenus() {
             main: isZh ? 'Gemini Nexus' : 'Gemini Nexus',
             ask: isZh ? '快速提问' : 'Quick Ask',
             pageChat: isZh ? '与当前网页对话' : 'Chat with Page',
+            readPage: isZh ? '朗读当前网页' : 'Read page aloud',
+            readSelection: isZh ? '朗读选中内容' : 'Read selection aloud',
             ocr: isZh ? 'OCR (文字提取)' : 'OCR (Extract Text)',
             screenshotTranslate: isZh ? '截图翻译' : 'Screenshot Translate',
             snip: isZh ? '区域截图 (Snip)' : 'Snip (Capture Area)',
@@ -101,6 +105,20 @@ export function setupContextMenus() {
                 parentId: 'gemini-nexus-parent',
                 title: titles.pageChat,
                 contexts: ['all'],
+                documentUrlPatterns: WEB_PAGE_PATTERNS,
+            },
+            {
+                id: 'menu-read-page',
+                parentId: 'gemini-nexus-parent',
+                title: titles.readPage,
+                contexts: ['all'],
+                documentUrlPatterns: WEB_PAGE_PATTERNS,
+            },
+            {
+                id: 'menu-read-selection',
+                parentId: 'gemini-nexus-parent',
+                title: titles.readSelection,
+                contexts: ['selection'],
                 documentUrlPatterns: WEB_PAGE_PATTERNS,
             },
             {

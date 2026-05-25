@@ -15,6 +15,10 @@ function installControllerDependencies() {
 
     window.GeminiToolbarUI = vi.fn(() => uiInstance);
     window.GeminiToolbarActions = vi.fn();
+    window.GeminiSpeechReader = vi.fn(() => ({
+        readSelection: vi.fn(),
+        readPage: vi.fn(),
+    }));
     window.GeminiImageDetector = vi.fn(() => ({
         init: vi.fn(),
         cancelHide: vi.fn(),

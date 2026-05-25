@@ -18,6 +18,7 @@
         constructor() {
             this.ui = new window.GeminiToolbarUI();
             this.actions = new window.GeminiToolbarActions(this.ui);
+            this.speechReader = new window.GeminiSpeechReader();
 
             this.imageDetector = new window.GeminiImageDetector({
                 onShow: (rect) => this.ui.showImageButton(rect),
@@ -131,6 +132,11 @@
                 this.showGlobalInput(false);
             } else if (mode === 'page_chat') {
                 this.showGlobalInput(true);
+            } else if (mode === 'read_page') {
+                this.readPageAloud();
+            } else if (mode === 'read_selection') {
+                this.currentSelection = window.getSelection?.().toString().trim() || '';
+                this.readSelectionAloud();
             } else {
                 chrome.runtime.sendMessage({ action: 'INITIATE_CAPTURE' });
             }
@@ -229,6 +235,22 @@
 
         handleAction(actionType, data) {
             this.dispatcher.dispatch(actionType, data);
+        }
+
+        readSelectionAloud() {
+            try {
+                this.speechReader.readSelection(this.currentSelection);
+            } catch (error) {
+                this.showExtensionError(error.message || String(error));
+            }
+        }
+
+        readPageAloud() {
+            try {
+                this.speechReader.readPage();
+            } catch (error) {
+                this.showExtensionError(error.message || String(error));
+            }
         }
 
         show(rect, mousePoint) {

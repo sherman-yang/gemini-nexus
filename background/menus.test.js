@@ -66,6 +66,26 @@ describe('context menu actions', () => {
         });
     });
 
+    it('creates page and selection reading context menu entries', () => {
+        setupContextMenus();
+        const createdItems = chrome.contextMenus.create.mock.calls.map(([item]) => item);
+        const readPage = createdItems.find((item) => item.id === 'menu-read-page');
+        const readSelection = createdItems.find((item) => item.id === 'menu-read-selection');
+
+        expect(readPage).toEqual(
+            expect.objectContaining({
+                title: 'Read page aloud',
+                contexts: ['all'],
+            })
+        );
+        expect(readSelection).toEqual(
+            expect.objectContaining({
+                title: 'Read selection aloud',
+                contexts: ['selection'],
+            })
+        );
+    });
+
     it('shows an in-page failure notice when a context menu action cannot reach content scripts', async () => {
         setupContextMenus();
         injectContentScriptsIntoTab.mockResolvedValue({ status: 'failed' });
