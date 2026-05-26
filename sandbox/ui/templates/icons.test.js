@@ -36,9 +36,7 @@ describe('TemplateIcons', () => {
     });
 
     it('uses a release tag icon for the GitHub releases link', () => {
-        expect(TemplateIcons.RELEASES).toContain(
-            'M12.586 2.586A2 2 0 0 0 11.172 2H4'
-        );
+        expect(TemplateIcons.RELEASES).toContain('M12.586 2.586A2 2 0 0 0 11.172 2H4');
         expect(TemplateIcons.RELEASES).toContain(
             '<circle cx="7.5" cy="7.5" r=".5" fill="currentColor"></circle>'
         );
@@ -52,9 +50,7 @@ describe('TemplateIcons', () => {
         );
         expect(TemplateIcons.TAB_STACK).toContain('M7 7h14');
         expect(TemplateIcons.TAB_STACK).toContain('M3 8v11a2 2 0 0 0 2 2h12');
-        expect(TemplateIcons.TAB_STACK).not.toContain(
-            'M2 6h20v13a2 2 0 0 1-2 2H4'
-        );
+        expect(TemplateIcons.TAB_STACK).not.toContain('M2 6h20v13a2 2 0 0 1-2 2H4');
         expect(TemplateIcons.TAB_STACK).not.toContain('M2 6l2.5-3.5A2 2 0 0 1');
     });
 });

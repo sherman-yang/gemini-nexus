@@ -29,12 +29,8 @@ describe('GeminiToolbarIcons', () => {
     });
 
     it('uses a tool-shaped icon for toolbar tool menus', () => {
-        expect(window.GeminiToolbarIcons.TOOLS).toContain(
-            'M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6'
-        );
-        expect(window.GeminiToolbarIcons.TOOLS).not.toContain(
-            'M14.5 2H6a2 2 0 0 0-2 2v16'
-        );
+        expect(window.GeminiToolbarIcons.TOOLS).toContain('M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6');
+        expect(window.GeminiToolbarIcons.TOOLS).not.toContain('M14.5 2H6a2 2 0 0 0-2 2v16');
         expect(window.GeminiToolbarIcons.TOOLS).not.toContain('14 2 14 8 20 8');
     });
 
@@ -42,11 +38,7 @@ describe('GeminiToolbarIcons', () => {
         expect(window.GeminiToolbarIcons.REMOVE_TEXT).toContain('M4 6h10');
         expect(window.GeminiToolbarIcons.REMOVE_TEXT).toContain('M4 10h12');
         expect(window.GeminiToolbarIcons.REMOVE_TEXT).toContain('m15 15 5 5');
-        expect(window.GeminiToolbarIcons.REMOVE_TEXT).not.toContain(
-            'M20 21v-2a4 4 0 0 0-4-4H8'
-        );
-        expect(window.GeminiToolbarIcons.REMOVE_TEXT).not.toContain(
-            '<circle cx="12" cy="7" r="4"'
-        );
+        expect(window.GeminiToolbarIcons.REMOVE_TEXT).not.toContain('M20 21v-2a4 4 0 0 0-4-4H8');
+        expect(window.GeminiToolbarIcons.REMOVE_TEXT).not.toContain('<circle cx="12" cy="7" r="4"');
     });
 });

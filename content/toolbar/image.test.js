@@ -6,7 +6,13 @@ async function installImageDetector() {
     await import('./image.js');
 }
 
-function createImage({ width, height, alt = '', className = '', src = 'https://example.test/i.png' }) {
+function createImage({
+    width,
+    height,
+    alt = '',
+    className = '',
+    src = 'https://example.test/i.png',
+}) {
     const image = document.createElement('img');
     image.width = width;
     image.height = height;

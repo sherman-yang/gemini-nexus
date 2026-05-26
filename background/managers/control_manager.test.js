@@ -1,8 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-    BrowserControlManager,
-    DEFAULT_BROWSER_CONTROL_START_URL,
-} from './control_manager.js';
+import { BrowserControlManager, DEFAULT_BROWSER_CONTROL_START_URL } from './control_manager.js';
 
 function setupChrome() {
     globalThis.chrome = {
