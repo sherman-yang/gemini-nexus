@@ -1,5 +1,11 @@
 # Changelog
 
+## v5.0.12 - 2026-06-07
+
+- 替换 Gemini 去水印实现，接入 `gemini-watermark-remover-extension` 的 GWR 主世界脚本与处理 runtime。
+- 移除旧的 Nexus 采样遮盖去水印链路，改用 GWR bridge 代理状态读取和跨域图片请求。
+- 同步 Gemini 与 business Gemini 页面注入、扩展打包和生成图片去水印处理，并补充对应回归测试。
+
 ## v5.0.11 - 2026-06-02
 
 - 新增页面级快捷键桥接与后台转发，支持顶部页面和 iframe 内触发快速提问、区域 OCR 等页面快捷命令。
