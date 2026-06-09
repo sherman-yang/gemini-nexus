@@ -46,7 +46,7 @@ describe('manifest content scripts', () => {
 
         expect(manifest.commands['quick-ask'].suggested_key).toEqual({
             default: 'Alt+Q',
-            mac: 'Option+Q',
+            mac: 'Alt+Q',
         });
     });
 
@@ -55,8 +55,18 @@ describe('manifest content scripts', () => {
 
         expect(manifest.commands['area-ocr'].suggested_key).toEqual({
             default: 'Alt+O',
-            mac: 'Option+O',
+            mac: 'Alt+O',
         });
+    });
+
+    it('uses Chromium-compatible macOS command modifiers', async () => {
+        const manifest = JSON.parse(await readFile('manifest.json', 'utf8'));
+        const macShortcuts = Object.values(manifest.commands).flatMap((command) =>
+            command.suggested_key?.mac ? [command.suggested_key.mac] : []
+        );
+
+        expect(macShortcuts).not.toContain('Option+Q');
+        expect(macShortcuts).not.toContain('Option+O');
     });
 
     it('uses explicit icon assets for each manifest icon size', async () => {

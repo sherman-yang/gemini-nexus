@@ -44,14 +44,14 @@
         "quick-ask": {
             "suggested_key": {
                 "default": "Alt+Q",
-                "mac": "Option+Q"
+                "mac": "Alt+Q"
             },
             "description": "Open Gemini Nexus Quick Ask"
         },
         "area-ocr": {
             "suggested_key": {
                 "default": "Alt+O",
-                "mac": "Option+O"
+                "mac": "Alt+O"
             },
             "description": "Start Gemini Nexus Area OCR"
         }
