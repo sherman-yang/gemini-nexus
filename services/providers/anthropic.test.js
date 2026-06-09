@@ -118,4 +118,35 @@ describe('sendAnthropicMessage', () => {
             { type: 'text', text: 'Describe' },
         ]);
     });
+
+    it('uses adaptive thinking for Claude models that reject fixed thinking budgets', async () => {
+        for (const model of [
+            'claude-jupiter-v1-p',
+            'claude-mythos-preview',
+            'claude-opus-4-7',
+            'claude-opus-4-8-20261201',
+        ]) {
+            global.fetch.mockClear();
+
+            await sendAnthropicMessage(
+                'Think carefully',
+                '',
+                [],
+                {
+                    baseUrl: 'https://api.anthropic.com/v1',
+                    apiKey: 'anthropic-key',
+                    model,
+                    thinkingLevel: 'medium',
+                },
+                [],
+                null,
+                vi.fn()
+            );
+
+            const [, init] = global.fetch.mock.calls[0];
+            const payload = JSON.parse(init.body);
+            expect(payload.thinking).toEqual({ type: 'adaptive' });
+            expect(payload.output_config).toEqual({ effort: 'medium' });
+        }
+    });
 });

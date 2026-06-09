@@ -13,6 +13,11 @@ const THINKING_BUDGET_BY_LEVEL = Object.freeze({
     medium: 2048,
     high: 4096,
 });
+const ADAPTIVE_THINKING_MODEL_PATTERNS = Object.freeze([
+    /^claude-jupiter(?:-|$)/i,
+    /^claude-mythos(?:-|$)/i,
+    /^claude-opus-4-(?:[7-9]|\d{2,})(?:-|$)/i,
+]);
 
 function normalizeBaseUrl(baseUrl) {
     return String(baseUrl || '').replace(/\/$/, '');
@@ -106,12 +111,25 @@ function buildMessages(prompt, history, files) {
     return messages;
 }
 
-function getThinkingConfig(thinkingLevel) {
+function shouldUseAdaptiveThinking(model) {
+    const modelId = String(model || '').trim();
+    return ADAPTIVE_THINKING_MODEL_PATTERNS.some((pattern) => pattern.test(modelId));
+}
+
+function getThinkingConfig(thinkingLevel, model) {
     const budgetTokens = THINKING_BUDGET_BY_LEVEL[thinkingLevel];
     if (!budgetTokens) return null;
+    if (shouldUseAdaptiveThinking(model)) {
+        return {
+            thinking: { type: 'adaptive' },
+            outputConfig: { effort: thinkingLevel },
+        };
+    }
     return {
-        type: 'enabled',
-        budget_tokens: budgetTokens,
+        thinking: {
+            type: 'enabled',
+            budget_tokens: budgetTokens,
+        },
     };
 }
 
@@ -170,9 +188,12 @@ export async function sendAnthropicMessage(
         payload.system = systemInstruction;
     }
 
-    const thinking = getThinkingConfig(config?.thinkingLevel);
-    if (thinking) {
-        payload.thinking = thinking;
+    const thinkingConfig = getThinkingConfig(config?.thinkingLevel, model);
+    if (thinkingConfig) {
+        payload.thinking = thinkingConfig.thinking;
+        if (thinkingConfig.outputConfig) {
+            payload.output_config = thinkingConfig.outputConfig;
+        }
     }
 
     const url = `${baseUrl}/messages`;
