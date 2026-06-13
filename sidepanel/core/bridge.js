@@ -66,7 +66,7 @@ export class MessageBridge {
     }
 
     openFullPage() {
-        const url = chrome.runtime.getURL('sidepanel/index.html');
+        const url = chrome.runtime.getURL('sidepanel/index.html?standalone=1');
         chrome.tabs.create({ url });
     }
 

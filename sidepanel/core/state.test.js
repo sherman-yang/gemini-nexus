@@ -1,7 +1,13 @@
 // @vitest-environment jsdom
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { StateManager, getOwnerTabIdFromLocation, isExtensionHostPageTab } from './state.js';
+import {
+    StateManager,
+    getContextTabFromTabs,
+    getOwnerTabIdFromLocation,
+    isStandalonePageFromLocation,
+    isExtensionHostPageTab,
+} from './state.js';
 
 function createFrame() {
     return {
@@ -93,6 +99,20 @@ describe('StateManager tab ownership', () => {
         expect(getOwnerTabIdFromLocation({ href: 'not a url' })).toBeNull();
     });
 
+    it('recognizes full-page chat launches as standalone pages', () => {
+        expect(
+            isStandalonePageFromLocation({
+                href: 'chrome-extension://id/sidepanel/index.html?standalone=1',
+            })
+        ).toBe(true);
+        expect(
+            isStandalonePageFromLocation({
+                href: 'chrome-extension://id/sidepanel/index.html',
+            })
+        ).toBe(false);
+        expect(isStandalonePageFromLocation({ href: 'not a url' })).toBe(false);
+    });
+
     it('recognizes extension-hosted chat pages as non-webpage tab contexts', () => {
         expect(
             isExtensionHostPageTab({
@@ -134,7 +154,7 @@ describe('StateManager tab ownership', () => {
         listeners.activated({ tabId: 44 });
 
         expect(chrome.tabs.query).toHaveBeenCalledWith(
-            { active: true, currentWindow: true },
+            { currentWindow: true },
             expect.any(Function)
         );
         expect(manager.getCurrentTabId()).toBe(44);
@@ -151,6 +171,33 @@ describe('StateManager tab ownership', () => {
         manager.init();
 
         expect(manager.getCurrentTabId()).toBeNull();
+    });
+
+    it('does not bind a marked standalone full-page chat to a recent webpage tab', () => {
+        window.history.replaceState(null, '', '/sidepanel/index.html?standalone=1');
+        const listeners = setupChrome({ id: 33, active: true, url: 'https://active.test/' });
+        const manager = new StateManager(createFrame());
+
+        manager.init();
+        listeners.activated({ tabId: 33 });
+
+        expect(chrome.tabs.query).not.toHaveBeenCalled();
+        expect(manager.getCurrentTabId()).toBeNull();
+    });
+
+    it('falls back to the most recently accessed webpage when the active tab is an extension page', () => {
+        const contextTab = getContextTabFromTabs([
+            {
+                id: 44,
+                active: true,
+                lastAccessed: 300,
+                url: 'chrome-extension://id/sidepanel/index.html',
+            },
+            { id: 45, active: false, lastAccessed: 200, url: 'https://older.test/' },
+            { id: 46, active: false, lastAccessed: 400, url: 'https://recent.test/' },
+        ]);
+
+        expect(contextTab.id).toBe(46);
     });
 
     it('uses the standalone host tab id for message routing without page context', () => {
@@ -170,6 +217,17 @@ describe('StateManager tab ownership', () => {
         manager.setHostTabId(null);
 
         expect(manager.getMessageTargetTabId()).toBeNull();
+    });
+
+    it('prefers webpage context over the standalone host tab for message routing', () => {
+        setupChrome(33);
+        const manager = new StateManager(createFrame());
+
+        manager.init();
+        manager.setHostTabId(777);
+
+        expect(manager.getCurrentTabId()).toBe(33);
+        expect(manager.getMessageTargetTabId()).toBe(33);
     });
 
     it('keeps the previous webpage context when standalone chat becomes active', () => {

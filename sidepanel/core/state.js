@@ -14,6 +14,15 @@ export function getOwnerTabIdFromLocation(locationLike = window.location) {
     }
 }
 
+export function isStandalonePageFromLocation(locationLike = window.location) {
+    try {
+        const url = new URL(locationLike.href);
+        return url.searchParams.get('standalone') === '1';
+    } catch {
+        return false;
+    }
+}
+
 export function isExtensionHostPageTab(tab) {
     if (!tab || typeof tab.url !== 'string') return false;
 
@@ -30,6 +39,21 @@ export function isExtensionHostPageTab(tab) {
     } catch {
         return false;
     }
+}
+
+export function getContextTabFromTabs(tabs, fallback = null) {
+    if (!Array.isArray(tabs)) return fallback;
+
+    const pageTabs = tabs.filter((tab) => tab && !isExtensionHostPageTab(tab));
+    const activeTab = pageTabs.find((tab) => tab.active === true);
+    if (activeTab) return activeTab;
+
+    return (
+        pageTabs
+            .slice()
+            .sort((left, right) => (right.lastAccessed || 0) - (left.lastAccessed || 0))[0] ||
+        fallback
+    );
 }
 
 function cacheSidebarExpandedPreference(isExpanded) {
@@ -74,8 +98,9 @@ export class StateManager {
         this.localStorageData = null;
         this.sessionStorageData = null;
         this.ownerTabId = getOwnerTabIdFromLocation();
+        this.isStandalonePage = isStandalonePageFromLocation();
         this.hostTabId = null;
-        this.currentTabId = this.ownerTabId ?? undefined;
+        this.currentTabId = this.ownerTabId ?? (this.isStandalonePage ? null : undefined);
         this.uiIsReady = false;
         this.hasInitialized = false;
     }
@@ -133,16 +158,16 @@ export class StateManager {
             });
         }
 
-        if (this.hasFixedTabContext()) {
+        if (this.hasFixedTabContext() || this.isStandalonePage) {
             this.trySendInitData();
         } else {
-            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.tabs.query({ currentWindow: true }, (tabs) => {
                 const errorMessage = getRuntimeLastErrorMessage();
                 if (errorMessage) {
                     console.warn('Failed to resolve active side panel tab:', errorMessage);
                     this.currentTabId = null;
                 } else {
-                    const tab = tabs && tabs[0] ? tabs[0] : null;
+                    const tab = getContextTabFromTabs(tabs);
                     this.currentTabId = this.getContextTabId(tab, null);
                 }
                 this.trySendInitData();
@@ -166,6 +191,7 @@ export class StateManager {
 
         chrome.tabs.onActivated.addListener(({ tabId }) => {
             if (this.hasFixedTabContext()) return;
+            if (this.isStandalonePage) return;
 
             this.updateCurrentTabFromActivatedTab(tabId);
         });
@@ -187,13 +213,14 @@ export class StateManager {
             }
 
             if (this.hasFixedTabContext()) return;
+            if (this.isStandalonePage) return;
 
             if (this.currentTabId === tabId) {
-                chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                chrome.tabs.query({ currentWindow: true }, (tabs) => {
                     if (getRuntimeLastErrorMessage()) {
                         this.currentTabId = null;
                     } else {
-                        const tab = tabs && tabs[0] ? tabs[0] : null;
+                        const tab = getContextTabFromTabs(tabs);
                         this.currentTabId = this.getContextTabId(tab, null);
                     }
                     this.postCurrentTabContext();
@@ -344,7 +371,7 @@ export class StateManager {
     }
 
     getMessageTargetTabId() {
-        return this.hostTabId || this.currentTabId;
+        return this.currentTabId || this.hostTabId;
     }
 
     getContextTabId(tab, fallback = null) {

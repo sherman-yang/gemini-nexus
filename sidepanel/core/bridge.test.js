@@ -106,6 +106,24 @@ describe('MessageBridge model persistence', () => {
         expect(state.save).not.toHaveBeenCalledWith('geminiModel', 'deepseek-v4-pro');
     });
 
+    it('marks full-page chat launches as standalone tabs', () => {
+        const frame = createFrame();
+        const state = createState();
+        const bridge = new MessageBridge(frame, state);
+        chrome.runtime.getURL = vi.fn((path) => `chrome-extension://id/${path}`);
+
+        bridge.handleWindowMessage({
+            source: frame.getWindow(),
+            data: {
+                action: 'OPEN_FULL_PAGE',
+            },
+        });
+
+        expect(chrome.tabs.create).toHaveBeenCalledWith({
+            url: 'chrome-extension://id/sidepanel/index.html?standalone=1',
+        });
+    });
+
     it('merges side panel session bindings with existing session storage', () => {
         const frame = createFrame();
         const state = createState();
@@ -242,7 +260,7 @@ describe('MessageBridge model persistence', () => {
         });
     });
 
-    it('routes browser control toggles through the standalone host tab id', () => {
+    it('does not route browser control toggles through a standalone host tab without webpage context', () => {
         const frame = createFrame();
         const state = createState();
         state.getCurrentTabId.mockReturnValue(null);
@@ -259,7 +277,6 @@ describe('MessageBridge model persistence', () => {
             action: 'TOGGLE_BROWSER_CONTROL',
             enabled: true,
             hostIsTab: true,
-            sidePanelTabId: 777,
         });
     });
 
@@ -343,7 +360,7 @@ describe('MessageBridge model persistence', () => {
         );
     });
 
-    it('routes browser-control prompts through the standalone host tab id', () => {
+    it('routes browser-control prompts through the current webpage tab id', () => {
         const frame = createFrame();
         const state = createState();
         state.getCurrentTabId.mockReturnValue(33);
@@ -362,7 +379,7 @@ describe('MessageBridge model persistence', () => {
             text: 'Open Google',
             enableBrowserControl: true,
             hostIsTab: true,
-            sidePanelTabId: 777,
+            sidePanelTabId: 33,
         });
     });
 

@@ -8,7 +8,7 @@ const FORWARDED_RESPONSE_ACTIONS = new Set([
     'GET_PROVIDER_MODELS',
 ]);
 
-const HOST_ROUTED_ACTIONS = new Set(['GET_OPEN_TABS', 'SWITCH_TAB', 'TOGGLE_BROWSER_CONTROL']);
+const HOST_ROUTED_ACTIONS = new Set(['GET_OPEN_TABS', 'SWITCH_TAB']);
 
 function getErrorMessage(error, fallback = 'Background request failed') {
     return error?.message || error || fallback;
@@ -26,14 +26,22 @@ function shouldRouteToHostTab(payload) {
     return payload.action === 'SEND_PROMPT' && payload.enableBrowserControl === true;
 }
 
+function shouldRequirePageContextRoute(payload) {
+    if (!payload || typeof payload !== 'object') return false;
+    if (payload.action === 'TOGGLE_BROWSER_CONTROL') return true;
+    return payload.action === 'SEND_PROMPT' && payload.enableBrowserControl === true;
+}
+
 function attachCurrentTabContext(state, payload) {
     if (!payload || typeof payload !== 'object' || payload.sidePanelTabId != null) {
         return payload;
     }
 
-    const tabId = shouldRouteToHostTab(payload)
-        ? getMessageTargetTabId(state)
-        : state.getCurrentTabId();
+    const tabId = shouldRequirePageContextRoute(payload)
+        ? state.getCurrentTabId()
+        : shouldRouteToHostTab(payload)
+          ? getMessageTargetTabId(state)
+          : state.getCurrentTabId();
     if (!Number.isInteger(tabId) || tabId <= 0) {
         return payload;
     }
